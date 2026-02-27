@@ -27,7 +27,7 @@ const COLORS = {
 const TYRE_STYLES = {
   Stock: { name: "Tyre Stock", front: { rim: "0.241, 0.204", tyre: "0.209, 0.205" }, rear: { rim: "0.240, 0.180", tyre: "0.209, 0.185" }, file: "Tyre_Stock.kn5", img: "id=1Ru91mDv-nQF8aFT1UHKcRlbHF78tiJh4" },
   Pro: { name: "Tyre Pro", front: { rim: "0.200, 0.195", tyre: "0.209, 0.205" }, rear: { rim: "0.200, 0.180", tyre: "0.209, 0.185" }, file: "Tyre_Pro.kn5", img: "id=1FynBqQ4jbs3KotrP7p8XBwMzLDMg7WRK" },
-  Stretched: { name: "Tyre Stretched", front: { rim: "0.201, 0.204", tyre: "0.209, 0.205" }, rear: { rim: "0.200, 0.180", tyre: "0.209, 0.185" }, file: "Tyre_Stretched.kn5", img: "id=1g_RK_e-WQHHrkIwRpeBKkJUrrxA_Xtb_" },
+  Stretched: { name: "Tyre Stretched", front: { rim: "0.205, 0.198", tyre: "0.209, 0.205" }, rear: { rim: "0.205, 0.178", tyre: "0.209, 0.185" }, file: "Tyre_Stretched.kn5", img: "id=1g_RK_e-WQHHrkIwRpeBKkJUrrxA_Xtb_" },
   Thicc: { name: "Tyre Thicc", front: { rim: "0.225, 0.21", tyre: "0.209, 0.205" }, rear: { rim: "0.225, 0.195", tyre: "0.209, 0.185" }, file: "Tyre_Thicc.kn5", img: "id=1dQj2_6L1xzm3ycJW2Bt0kwq4Xsq-g-wc" }
 };
 
@@ -91,7 +91,7 @@ const RIM_DATABASE = {
     { name: "Equip_40", img: "id=1g24sNGQSau356Ucbx30MwpjkNlQ3fTJj" }, { name: "Kiwami_CR", img: "id=195VQc3_nwDUhZqHyr2emd9m7AwzSIgQx" },
     { name: "Kiwami_Sticker", img: "id=1kh7GLHmkm_Rmv475_xJFxqiI_isjjn-s" }, { name: "Meister_L1", img: "id=1T6TeNtqGk1yqaZIx7fbuJK9snebv20Mu" },
     { name: "Meister_S1", img: "id=1ufqzpgy0kCzFbnniY_qWJi2oDTSNr_6T" }, { name: "VS_XX", img: "id=1vzsA-htawcdnfG9xve000uUTA4Al4lOW" },
-    { name: "XD9", img: "id=1An7QmFb3BMV1zz5Mc3jXotNpnsANxd3D" }, { name: "Blitz", img: "id=1QwaztucADK2KywENVh_YXNv8fzYkGT-x" },
+    { name: "XD9", img: "id=1An7QmFb3BMV1zz5Mc3jXotNpnsANxd3D" }, { name: "Blitz_03", img: "id=1QwaztucADK2KywENVh_YXNv8fzYkGT-x" },
     { name: "CR2P", img: "id=1rZrRRV41FQ5d6tpQmS76atMr5bOxVr7-" }, { name: "M8R", img: "id=15isf-CBHVjm0CCYm7U9jeipl7hNPMxzn" }
   ],
   "ZP_Forged": [{ name: "Mono_3", img: "id=1S4QOUz2kcHn3zUgeLuzVys3yqVNwJcDR" }]
@@ -317,7 +317,7 @@ export default function App() {
   const [frontModel, setFrontModel] = useState('A3A');
   const [frontTyre, setFrontTyre] = useState('Stretched');
   const [rearMake, setRearMake] = useState('Work');
-  const [rearModel, setRearModel] = useState('Blitz');
+  const [rearModel, setRearModel] = useState('Blitz_03');
   const [rearTyre, setRearTyre] = useState('Thicc');
   const [frontOffset, setFrontOffset] = useState(() => parseFloat(localStorage.getItem('tp_f_off')) || BASE_OFFSETS.front);
   const [rearOffset, setRearOffset] = useState(() => parseFloat(localStorage.getItem('tp_r_off')) || BASE_OFFSETS.rear);
