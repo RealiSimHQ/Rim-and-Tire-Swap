@@ -610,6 +610,7 @@ ${textureBlocks}
       {patronName && (
         <nav className="fixed top-0 left-0 right-0 z-50 bg-[#0d1117] border-b border-slate-800 py-2 text-center text-[13px] font-sans">
           <span className="text-slate-500 mr-3">RealiSimHQ Tools:</span>
+          <a href="/" className="text-cyan-400 hover:bg-slate-800 px-3 py-1 rounded mx-1 transition-colors no-underline">Content Catalog</a>
           <a href="/ac-physics-tool/" className="text-cyan-400 hover:bg-slate-800 px-3 py-1 rounded mx-1 transition-colors no-underline">OG Physics</a>
           <a href="/extended-physics-drift-edition/" className="text-cyan-400 hover:bg-slate-800 px-3 py-1 rounded mx-1 transition-colors no-underline">Extended Physics</a>
           <a href="/Rim-and-Tire-Swap/" className="text-[#f0b429] bg-slate-800 px-3 py-1 rounded mx-1 font-bold no-underline">Rim & Tire Swap</a>
