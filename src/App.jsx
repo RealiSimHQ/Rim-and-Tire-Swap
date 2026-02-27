@@ -172,6 +172,9 @@ const RIM_DATABASE = {
   "ZP_Forged": [{ name: "Mono_3", img: "id=1S4QOUz2kcHn3zUgeLuzVys3yqVNwJcDR" }]
 };
 
+const TEXTURE_MAKES = Object.keys(TEXTURE_DATABASE);
+const RIM_MAKES = Object.keys(RIM_DATABASE);
+
 const getTextureINI = (key, index) => {
   const cfg = TEXTURE_CONFIGS[key] || TEXTURE_CONFIGS.Valino_Pergea;
   const base = `/../../parts/tyre/${cfg.folder}/`;
@@ -536,82 +539,4 @@ ${textureBlocks}`;
               <SelectionCard label="Front Profiling" make="" model={currentFrontTyre.name} img={currentFrontTyre.img} set={() => setPickerOpen('front-tyre-profile')} colorTheme="cyan" isProfiling />
             </div>
             <div className="flex flex-col gap-6">
-              <SelectionCard label="Rear Rim" make={rearMake} model={rearModel} img={currentRearRim.img} set={() => setPickerOpen('rear-rim')} colorTheme="purple" isRim />
-              <SelectionCard label="Rear Profiling" make="" model={currentRearTyre.name} img={currentRearTyre.img} set={() => setPickerOpen('rear-tyre-profile')} colorTheme="purple" isProfiling />
-            </div>
-          </div>
-
-          <div className="flex flex-col items-center gap-8">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 gap-8 w-full max-w-[1500px] justify-items-center">
-              {texList.map((tex, idx) => (
-                <div key={idx} className="w-full max-w-[620px]">
-                  <SelectionCard label={tex.label || "TIRE TEXTURE"} make={tex.make} model={tex.model} img={TEXTURE_DATABASE[tex.make]?.find(m => m.name === tex.model)?.img} set={() => setPickerOpen({ type: 'texture', index: idx })} colorTheme="cyan" isTexture showRemove={texList.length > 1} onRemove={() => removeTexture(idx)} />
-                </div>
-              ))}
-              <div onClick={addTexture} className="w-full max-w-[620px] bg-[#151B28]/40 border-2 border-dashed border-slate-800 rounded-[3.5rem] min-h-[400px] flex flex-col items-center justify-center group cursor-pointer hover:border-cyan-500/50 transition-all hover:bg-cyan-500/5">
-                <div className="w-24 h-24 bg-slate-900 rounded-full flex items-center justify-center text-slate-700 group-hover:text-cyan-400 group-hover:scale-110 transition-all border-4 border-slate-800 group-hover:border-cyan-500/50 shadow-xl mb-6"><Plus size={48} /></div>
-                <p className="font-black uppercase tracking-[0.3em] text-slate-600 group-hover:text-cyan-400 transition-colors">Add Texture Slot</p>
-              </div>
-            </div>
-          </div>
-
-          <div className="bg-[#151B28] rounded-[3.5rem] p-10 border border-slate-800/80 shadow-2xl flex flex-col gap-8">
-            <div className="flex items-center justify-between mb-2">
-              <div className="flex items-center gap-5">
-                <Layers size={36} className="text-cyan-400" />
-                <h2 className="text-3xl font-black uppercase italic tracking-widest text-white">Dashboard</h2>
-              </div>
-            </div>
-            <div onDragOver={(e) => { e.preventDefault(); setIsDragging(true); }} onDragLeave={() => setIsDragging(false)} onDrop={handleDrop} className={`relative group transition-all duration-300 ${isDragging ? 'scale-[1.01]' : ''}`}>
-              <input type="text" placeholder="PASTE CAR FOLDER OR TYPE KN5s HERE..." className={`w-full p-8 bg-[#0B0F19] border-2 rounded-[2.5rem] outline-none font-black text-[18px] tracking-[0.3em] focus:border-cyan-500 transition-all text-white placeholder:text-slate-700 shadow-inner text-center italic ${isDragging ? 'border-cyan-500 bg-cyan-500/5' : 'border-slate-800'}`} value={carFile} onChange={(e) => setCarFile(e.target.value)} />
-              <div className="absolute right-8 top-1/2 -translate-y-1/2 text-slate-700 group-focus-within:text-cyan-500"><Car size={40} /></div>
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 h-auto md:h-[90px]">
-              <SmartPasteBar label="FRONT RIM" value={frontRimMesh} setter={setFrontRimMesh} colorTheme="cyan" />
-              <SmartPasteBar label="REAR RIM" value={rearRimMesh} setter={setRearRimMesh} colorTheme="purple" />
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 h-auto md:h-[90px]">
-              <SmartPasteBar label="FRONT TYRE" value={frontTireMesh} setter={setFrontTireMesh} colorTheme="cyan" />
-              <SmartPasteBar label="REAR TYRE" value={rearTireMesh} setter={setRearTireMesh} colorTheme="purple" />
-            </div>
-            <button onClick={handleGenerate} className="w-full flex items-center justify-center gap-6 bg-gradient-to-r from-cyan-600 to-purple-600 hover:from-cyan-500 hover:to-purple-500 text-white py-10 rounded-[2.5rem] font-black text-3xl uppercase tracking-[0.4em] shadow-[0_20px_60px_rgba(34,211,238,0.25)] active:scale-[0.98] transition-all border-b-[8px] border-black/40 group ring-4 ring-transparent hover:ring-cyan-500/30 mt-4">
-              <Zap size={44} className="fill-white group-hover:scale-125 transition-transform" /> {patronName ? 'COPY CONFIG' : `GENERATE PACKAGE (${getRemainingTrials()} FREE LEFT)`}
-            </button>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 xl:gap-12 px-2">
-            <OffsetController label="Front Axle Position Adjustment" value={frontOffset} base={BASE_OFFSETS.front} setter={setFrontOffset} colorTheme="cyan" />
-            <OffsetController label="Rear Axle Position Adjustment" value={rearOffset} base={BASE_OFFSETS.rear} setter={setRearOffset} colorTheme="purple" />
-          </div>
-
-          {patronName && (
-            <div className="bg-[#151B28] rounded-[3.5rem] p-10 shadow-2xl flex flex-col border border-slate-800/80 h-[600px]">
-              <div className="flex items-center justify-between mb-8 px-2 shrink-0">
-                <div className="flex flex-col gap-2">
-                  <div className="flex items-center gap-4 text-cyan-400">
-                    <Layers size={32} />
-                    <h2 className="font-black uppercase text-[20px] tracking-[0.4em] italic text-white">Live Config</h2>
-                  </div>
-                  <p className="text-[12px] text-slate-500 font-black tracking-widest uppercase">Real-time Stream</p>
-                </div>
-                <button onClick={copyToClipboard} className="px-8 py-4 bg-[#0B0F19] hover:bg-slate-800 rounded-2xl text-slate-400 hover:text-white transition-all flex items-center gap-3 text-[13px] font-black border border-slate-700 active:scale-90 uppercase tracking-widest shadow-xl">
-                  {copySuccess ? <Check size={20} className="text-green-500" /> : <Copy size={20} />} {copySuccess ? 'Copied' : 'Copy All'}
-                </button>
-              </div>
-              <div className="flex-1 overflow-auto bg-[#0B0F19] rounded-[2.5rem] p-10 font-mono text-[13px] leading-relaxed text-slate-400 custom-scrollbar border border-slate-800 shadow-inner whitespace-pre">
-                {iniContent}
-              </div>
-            </div>
-          )}
-        </div>
-        <footer className="text-center py-12 text-[16px] text-slate-700 font-black uppercase tracking-[0.8em] opacity-40 italic mt-12">Master Configurator v4.5</footer>
-      </div>
-
-      <style dangerouslySetInnerHTML={{ __html: `
-        .custom-scrollbar::-webkit-scrollbar { width: 12px; }
-        .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
-        .custom-scrollbar::-webkit-scrollbar-thumb { background: #1e293b; border-radius: 20px; border: 4px solid #0B0F19; }
-      `}} />
-    </div>
-  );
-}
+              <SelectionCard label="Rear Rim
