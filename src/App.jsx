@@ -335,16 +335,16 @@ const WheelAssembly = ({ side, rimMake, rimModel, rimImg, tyreName, tyreImg, tyr
 
   return (
     <div className="flex flex-col items-center gap-5">
-      <p className={`text-[11px] font-black uppercase tracking-[0.5em] ${c.textFade}`}>{side}</p>
+      <p className={`text-[14px] font-black uppercase tracking-[0.5em] italic ${c.textFade}`}>{side}</p>
       {/* Rim label with arrows */}
-      <div className="flex items-center gap-3">
-        <button onClick={() => cycleRim(-1)} className="w-8 h-8 flex items-center justify-center rounded-full border-2 border-slate-700 bg-[#0B0F19] text-slate-600 hover:border-cyan-500 hover:text-cyan-400 transition-all">
+      <div className="flex items-center w-[300px]">
+        <button onClick={() => cycleRim(-1)} className="w-8 h-8 flex-shrink-0 flex items-center justify-center rounded-full border-2 border-slate-700 bg-[#0B0F19] text-slate-600 hover:border-cyan-500 hover:text-cyan-400 transition-all">
           <ChevronLeft size={16} />
         </button>
-        <p onClick={onOpenRimPicker} className="text-lg font-black uppercase tracking-wider text-white min-w-[200px] text-center cursor-pointer hover:text-cyan-400 transition-colors">
+        <p onClick={onOpenRimPicker} className="flex-1 text-lg font-black uppercase tracking-wider text-white text-center cursor-pointer hover:text-cyan-400 transition-colors truncate px-2">
           {rimMake} {rimModel}
         </p>
-        <button onClick={() => cycleRim(1)} className="w-8 h-8 flex items-center justify-center rounded-full border-2 border-slate-700 bg-[#0B0F19] text-slate-600 hover:border-cyan-500 hover:text-cyan-400 transition-all">
+        <button onClick={() => cycleRim(1)} className="w-8 h-8 flex-shrink-0 flex items-center justify-center rounded-full border-2 border-slate-700 bg-[#0B0F19] text-slate-600 hover:border-cyan-500 hover:text-cyan-400 transition-all">
           <ChevronRight size={16} />
         </button>
       </div>
@@ -366,14 +366,14 @@ const WheelAssembly = ({ side, rimMake, rimModel, rimImg, tyreName, tyreImg, tyr
         </div>
       </div>
       {/* Tyre profile label with arrows */}
-      <div className="flex items-center gap-3">
-        <button onClick={() => cycleTyre(-1)} className="w-8 h-8 flex items-center justify-center rounded-full border-2 border-slate-700 bg-[#0B0F19] text-slate-600 hover:border-purple-500 hover:text-purple-400 transition-all">
+      <div className="flex items-center w-[300px]">
+        <button onClick={() => cycleTyre(-1)} className="w-8 h-8 flex-shrink-0 flex items-center justify-center rounded-full border-2 border-slate-700 bg-[#0B0F19] text-slate-600 hover:border-purple-500 hover:text-purple-400 transition-all">
           <ChevronLeft size={16} />
         </button>
-        <p onClick={onOpenTyrePicker} className="text-[13px] font-black uppercase tracking-[0.3em] text-purple-400/70 italic min-w-[120px] text-center cursor-pointer hover:text-purple-300 transition-colors">
+        <p onClick={onOpenTyrePicker} className="flex-1 text-[13px] font-black uppercase tracking-[0.3em] text-purple-400/70 italic text-center cursor-pointer hover:text-purple-300 transition-colors truncate px-2">
           {tyreName}
         </p>
-        <button onClick={() => cycleTyre(1)} className="w-8 h-8 flex items-center justify-center rounded-full border-2 border-slate-700 bg-[#0B0F19] text-slate-600 hover:border-purple-500 hover:text-purple-400 transition-all">
+        <button onClick={() => cycleTyre(1)} className="w-8 h-8 flex-shrink-0 flex items-center justify-center rounded-full border-2 border-slate-700 bg-[#0B0F19] text-slate-600 hover:border-purple-500 hover:text-purple-400 transition-all">
           <ChevronRight size={16} />
         </button>
       </div>
