@@ -26,9 +26,9 @@ const COLORS = {
 // --- DATA ---
 const TYRE_STYLES = {
   Stock: { name: "Tyre Stock", front: { rim: "0.241, 0.204", tyre: "0.209, 0.205" }, rear: { rim: "0.240, 0.180", tyre: "0.209, 0.185" }, file: "Tyre_Stock.kn5", img: "id=1Ru91mDv-nQF8aFT1UHKcRlbHF78tiJh4" },
-  Pro: { name: "Tyre Pro", front: { rim: "0.200, 0.195", tyre: "0.209, 0.215" }, rear: { rim: "0.200, 0.180", tyre: "0.209, 0.185" }, file: "Tyre_Pro.kn5", img: "id=1FynBqQ4jbs3KotrP7p8XBwMzLDMg7WRK" },
+  Pro: { name: "Tyre Pro", front: { rim: "0.200, 0.195", tyre: "0.209, 0.205" }, rear: { rim: "0.200, 0.180", tyre: "0.209, 0.185" }, file: "Tyre_Pro.kn5", img: "id=1FynBqQ4jbs3KotrP7p8XBwMzLDMg7WRK" },
   Stretched: { name: "Tyre Stretched", front: { rim: "0.205, 0.178", tyre: "0.209, 0.185" }, rear: { rim: "0.205, 0.178", tyre: "0.209, 0.185" }, file: "Tyre_Stretched.kn5", img: "id=1g_RK_e-WQHHrkIwRpeBKkJUrrxA_Xtb_" },
-  Thicc: { name: "Tyre Thicc", front: { rim: "0.225, 0.21", tyre: "0.209, 0.205" }, rear: { rim: "0.225, 0.195", tyre: "0.209, 0.205" }, file: "Tyre_Thicc.kn5", img: "id=1dQj2_6L1xzm3ycJW2Bt0kwq4Xsq-g-wc" }
+  Thicc: { name: "Tyre Thicc", front: { rim: "0.225, 0.21", tyre: "0.209, 0.205" }, rear: { rim: "0.225, 0.195", tyre: "0.209, 0.185" }, file: "Tyre_Thicc.kn5", img: "id=1dQj2_6L1xzm3ycJW2Bt0kwq4Xsq-g-wc" }
 };
 
 const TEXTURE_DATABASE = {
@@ -60,9 +60,9 @@ const RIM_DATABASE = {
   "CCW": [{ name: "CCW", img: "https://i.imgur.com/6ZzpFEI.jpeg" }],
   "Cosmis_Racing": [{ name: "XT-006R", img: "https://i.imgur.com/ALziMdo.jpeg" }],
   "Desmond": [{ name: "Regamaster_S", img: "https://i.imgur.com/9MfOi44.jpeg" }],
-  "Enkei": [{ name: "ERPF01", img: "https://i.imgur.com/KPqHOUm.jpeg" }, { name: "GTC_02", img: "https://i.imgur.com/4udVEpC.jpeg", offsetDelta: 0.020 }, { name: "NT03_RR", img: "https://i.imgur.com/lBAIfVR.jpeg" }],
+  "Enkei": [{ name: "ERPF01", img: "https://i.imgur.com/KPqHOUm.jpeg" }, { name: "GTC_02", img: "https://i.imgur.com/4udVEpC.jpeg", offsetDelta: 0.020, tyreWidthOverride: { front: 0.215 } }, { name: "NT03_RR", img: "https://i.imgur.com/lBAIfVR.jpeg" }],
   "HGK": [{ name: "Eurofighter", img: "https://i.imgur.com/IGeCOeW.jpeg" }],
-  "HRE": [{ name: "SC300", img: "https://i.imgur.com/NDPoWTt.jpeg" }, { name: "SC305", img: "https://i.imgur.com/8NSZfHO.jpeg" }],
+  "HRE": [{ name: "SC300", img: "https://i.imgur.com/NDPoWTt.jpeg", tyreWidthOverride: { rear: 0.205 } }, { name: "SC305", img: "https://i.imgur.com/8NSZfHO.jpeg" }],
   "Nismo": [{ name: "LM_GT", img: "https://i.imgur.com/oWyZ24O.jpeg" }, { name: "LM_GT4", img: "https://i.imgur.com/zbNbrcH.jpeg" }],
   "OEM": [{ name: "Nissan-Silva", img: "https://i.imgur.com/IWWivK7.jpeg" }],
   "OZ": [{ name: "Futura", img: "https://i.imgur.com/uHG2XVc.jpeg" }],
@@ -453,9 +453,9 @@ export default function App() {
     const rRimOffStr = `0.0, ${(rearOffset + rearRimDelta).toFixed(3)}`;
     // Width adjustment: each 5mm step from 215 baseline = ±0.01 internal units
     const ftBaseRimWidth = parseFloat(ftData.front.rim.split(',')[1]) || 0.178;
-    const ftBaseTyreWidth = parseFloat(ftData.front.tyre.split(',')[1]) || 0.185;
+    const ftBaseTyreWidth = RIM_DATABASE[frontMake]?.find(m => m.name === frontModel)?.tyreWidthOverride?.front ?? (parseFloat(ftData.front.tyre.split(',')[1]) || 0.185);
     const rtBaseRimWidth = parseFloat(rtData.rear.rim.split(',')[1]) || 0.178;
-    const rtBaseTyreWidth = parseFloat(rtData.rear.tyre.split(',')[1]) || 0.185;
+    const rtBaseTyreWidth = RIM_DATABASE[rearMake]?.find(m => m.name === rearModel)?.tyreWidthOverride?.rear ?? (parseFloat(rtData.rear.tyre.split(',')[1]) || 0.185);
     const frontWidthDelta = ((frontWidth - 215) / 5) * 0.01;
     const rearWidthDelta = ((rearWidth - 215) / 5) * 0.01;
     const frontRimWidthInternal = (ftBaseRimWidth + frontWidthDelta).toFixed(3);
