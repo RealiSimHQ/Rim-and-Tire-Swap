@@ -131,7 +131,8 @@ TXNORMALBLUR = ${base}${cfg.normalBlur}`;
 
 // --- PATREON HELPERS ---
 function patreonLogin() {
-  const url = `${PATREON_OAUTH_URL}?response_type=code&client_id=${PATREON_CLIENT_ID}&redirect_uri=${encodeURIComponent(PATREON_REDIRECT)}&scope=identity%20identity%5Bemail%5D%20identity.memberships`;
+  const returnUrl = encodeURIComponent(window.location.origin + window.location.pathname);
+  const url = `${PATREON_OAUTH_URL}?response_type=code&client_id=${PATREON_CLIENT_ID}&redirect_uri=${encodeURIComponent(PATREON_REDIRECT)}&scope=identity%20identity%5Bemail%5D%20identity.memberships&state=${returnUrl}`;
   window.location.href = url;
 }
 function checkPatreonSession() {
@@ -603,7 +604,17 @@ ${textureBlocks}
   };
 
   return (
-    <div className="min-h-screen bg-[#0B0F19] text-white font-sans px-6 md:px-12 selection:bg-cyan-500/30 overflow-x-hidden pb-24 relative">
+    <div className={`min-h-screen bg-[#0B0F19] text-white font-sans px-6 md:px-12 selection:bg-cyan-500/30 overflow-x-hidden pb-24 relative ${patronName ? 'pt-10' : ''}`}>
+
+      {/* REALISIMHQ TOOL NAV (patrons only) */}
+      {patronName && (
+        <nav className="fixed top-0 left-0 right-0 z-50 bg-[#0d1117] border-b border-slate-800 py-2 text-center text-[13px] font-sans">
+          <span className="text-slate-500 mr-3">RealiSimHQ Tools:</span>
+          <a href="/ac-physics-tool/" className="text-cyan-400 hover:bg-slate-800 px-3 py-1 rounded mx-1 transition-colors no-underline">OG Physics</a>
+          <a href="/extended-physics-drift-edition/" className="text-cyan-400 hover:bg-slate-800 px-3 py-1 rounded mx-1 transition-colors no-underline">Extended Physics</a>
+          <a href="/Rim-and-Tire-Swap/" className="text-[#f0b429] bg-slate-800 px-3 py-1 rounded mx-1 font-bold no-underline">Rim & Tire Swap</a>
+        </nav>
+      )}
 
       {/* PATREON BAR */}
       <div className="absolute top-6 right-8 z-40">
