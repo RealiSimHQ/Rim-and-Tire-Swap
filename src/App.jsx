@@ -27,7 +27,7 @@ const COLORS = {
 const TYRE_STYLES = {
   Stock: { name: "Tyre Stock", front: { rim: "0.241, 0.204", tyre: "0.209, 0.205" }, rear: { rim: "0.240, 0.180", tyre: "0.209, 0.185" }, file: "Tyre_Stock.kn5", img: "id=1Ru91mDv-nQF8aFT1UHKcRlbHF78tiJh4" },
   Pro: { name: "Tyre Pro", front: { rim: "0.200, 0.195", tyre: "0.209, 0.205" }, rear: { rim: "0.200, 0.180", tyre: "0.209, 0.185" }, file: "Tyre_Pro.kn5", img: "id=1FynBqQ4jbs3KotrP7p8XBwMzLDMg7WRK" },
-  Stretched: { name: "Tyre Stretched", front: { rim: "0.205, 0.198", tyre: "0.209, 0.205" }, rear: { rim: "0.205, 0.178", tyre: "0.209, 0.185" }, file: "Tyre_Stretched.kn5", img: "id=1g_RK_e-WQHHrkIwRpeBKkJUrrxA_Xtb_" },
+  Stretched: { name: "Tyre Stretched", front: { rim: "0.205, 0.178", tyre: "0.209, 0.185" }, rear: { rim: "0.205, 0.178", tyre: "0.209, 0.185" }, file: "Tyre_Stretched.kn5", img: "id=1g_RK_e-WQHHrkIwRpeBKkJUrrxA_Xtb_" },
   Thicc: { name: "Tyre Thicc", front: { rim: "0.225, 0.21", tyre: "0.209, 0.205" }, rear: { rim: "0.225, 0.195", tyre: "0.209, 0.185" }, file: "Tyre_Thicc.kn5", img: "id=1dQj2_6L1xzm3ycJW2Bt0kwq4Xsq-g-wc" }
 };
 
@@ -366,6 +366,9 @@ export default function App() {
     const rOffStr = `${rearOffset.toFixed(3)}, 0.0`;
     const frontTyreWidthInternal = (frontWidth / 1000).toFixed(3);
     const rearTyreWidthInternal = (rearWidth / 1000).toFixed(3);
+    // Rim width tracks tyre width
+    const frontRimWidthInternal = frontTyreWidthInternal;
+    const rearRimWidthInternal = rearTyreWidthInternal;
     const textureBlocks = texList.map((tex, idx) => {
       const entryArr = TEXTURE_DATABASE[tex.make];
       const entry = entryArr?.find(m => m.name === tex.model) || entryArr?.[0] || TEXTURE_DATABASE["Valino"][0];
@@ -381,7 +384,7 @@ export default function App() {
 [ReplaceRims]
 File = ${clean(carFile)}
 OriginalRims = ${clean(frontRimMesh)}
-Model = /../../parts/rims/${frontMake}/${frontModel}.kn5, ${ftData.front.rim}
+Model = /../../parts/rims/${frontMake}/${frontModel}.kn5, ${ftData.front.rim.split(',')[0]}, ${frontRimWidthInternal}
 Offset = ${fOffStr}
 FrontOnly=1
 [ReplaceRims]
@@ -394,7 +397,7 @@ FrontOnly=1
 [ReplaceRims]
 File = ${clean(carFile)}
 OriginalRims = ${clean(rearRimMesh)}
-Model = /../../parts/rims/${rearMake}/${rearModel}.kn5, ${rtData.rear.rim}
+Model = /../../parts/rims/${rearMake}/${rearModel}.kn5, ${rtData.rear.rim.split(',')[0]}, ${rearRimWidthInternal}
 Offset = ${rOffStr}
 RearOnly=1
 [ReplaceRims]
