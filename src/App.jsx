@@ -528,6 +528,19 @@ ${textureBlocks}
     return null;
   };
 
+  const resetAll = () => {
+    setCarFile(''); setFrontRimMesh(''); setRearRimMesh(''); setFrontTireMesh(''); setRearTireMesh('');
+    setFrontMake('Advan'); setFrontModel('A3A'); setFrontTyre('Stretched');
+    setRearMake('Work'); setRearModel('Blitz_03'); setRearTyre('Thicc');
+    setFrontOffset(BASE_OFFSETS.front); setRearOffset(BASE_OFFSETS.rear);
+    setFrontWidth(215); setRearWidth(215);
+    setTexList([{ make: 'Valino', model: 'Pergea 08R', label: { name: 'Standard', shortName: 'ST' } }]);
+    localStorage.removeItem('tp_car'); localStorage.removeItem('tp_frm'); localStorage.removeItem('tp_rrm');
+    localStorage.removeItem('tp_ftm'); localStorage.removeItem('tp_rtm'); localStorage.removeItem('tp_f_off');
+    localStorage.removeItem('tp_r_off'); localStorage.removeItem('tp_f_width'); localStorage.removeItem('tp_r_width');
+    localStorage.removeItem('tp_tex_list');
+  };
+
   const copyToClipboard = () => {
     const textArea = document.createElement("textarea");
     textArea.value = iniContent;
@@ -875,7 +888,12 @@ ${textureBlocks}
                   </div>
                   <p className="text-[12px] text-slate-500 font-black tracking-widest uppercase">Real-time Stream</p>
                 </div>
-                <button onClick={copyToClipboard} className="px-8 py-4 bg-[#0B0F19] hover:bg-slate-800 rounded-2xl text-slate-400 hover:text-white transition-all flex items-center gap-3 text-[13px] font-black border border-slate-700 active:scale-90 uppercase tracking-widest shadow-xl">
+                <button onClick={resetAll} className="px-8 py-4 bg-[#0B0F19] hover:bg-red-900/30 rounded-2xl text-slate-400 hover:text-red-400 transition-all flex items-center gap-3 text-[13px] font-black border border-slate-700 hover:border-red-500/50 active:scale-90 uppercase tracking-widest shadow-xl">
+                  <Trash2 size={20} /> Reset All
+                </button>
+              </div>
+              <div className="flex justify-center mb-4 shrink-0">
+                <button onClick={copyToClipboard} className="px-10 py-4 bg-[#0B0F19] hover:bg-slate-800 rounded-2xl text-slate-400 hover:text-white transition-all flex items-center gap-3 text-[13px] font-black border border-slate-700 active:scale-90 uppercase tracking-widest shadow-xl">
                   {copySuccess ? <Check size={20} className="text-green-500" /> : <Copy size={20} />} {copySuccess ? 'Copied' : 'Copy All'}
                 </button>
               </div>
