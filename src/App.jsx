@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useEffect } from 'react';
-import { Car, Disc, Check, Copy, Layers, ClipboardPaste, Search, X, Image as ImageIcon, Trash2, Lock, Zap, Plus, Minus } from 'lucide-react';
+import { Car, Disc, Check, Copy, Layers, ClipboardPaste, Search, X, Image as ImageIcon, Trash2, Lock, Zap, Plus, Minus, ChevronLeft, ChevronRight } from 'lucide-react';
 
 // External script for JSZip
 const JSZIP_URL = "https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js";
@@ -298,7 +298,90 @@ const TireWidthController = ({ label, value, setter, colorTheme, min, max }) => 
       <p className="text-[10px] font-black text-slate-500 tracking-widest mt-6">Visual Only</p>
     </div>
   );
-};// --- MAIN APP ---
+};
+
+// Flattened rim list for arrow cycling
+const ALL_RIMS_FLAT = [];
+Object.keys(RIM_DATABASE).sort().forEach(make => {
+  RIM_DATABASE[make].forEach(model => {
+    ALL_RIMS_FLAT.push({ make, model: model.name, img: model.img });
+  });
+});
+
+const WheelAssembly = ({ side, rimMake, rimModel, rimImg, tyreName, tyreImg, tyreKey, onOpenRimPicker, onOpenTyrePicker, onRimChange, onTyreChange, colorTheme }) => {
+  const c = COLORS[colorTheme];
+  const [rollAnim, setRollAnim] = useState('');
+
+  const doRoll = (dir) => {
+    setRollAnim(dir > 0 ? 'roll-right' : 'roll-left');
+    setTimeout(() => setRollAnim(''), 450);
+  };
+
+  const cycleRim = (dir) => {
+    const curIdx = ALL_RIMS_FLAT.findIndex(r => r.make === rimMake && r.model === rimModel);
+    const nextIdx = (curIdx + dir + ALL_RIMS_FLAT.length) % ALL_RIMS_FLAT.length;
+    const next = ALL_RIMS_FLAT[nextIdx];
+    onRimChange(next.make, next.model);
+    doRoll(dir);
+  };
+
+  const tyreKeys = Object.keys(TYRE_STYLES);
+  const cycleTyre = (dir) => {
+    const curIdx = tyreKeys.indexOf(tyreKey);
+    const nextIdx = (curIdx + dir + tyreKeys.length) % tyreKeys.length;
+    onTyreChange(tyreKeys[nextIdx]);
+    doRoll(dir);
+  };
+
+  return (
+    <div className="flex flex-col items-center gap-5">
+      <p className={`text-[11px] font-black uppercase tracking-[0.5em] ${c.textFade}`}>{side}</p>
+      {/* Rim label with arrows */}
+      <div className="flex items-center gap-3">
+        <button onClick={() => cycleRim(-1)} className="w-8 h-8 flex items-center justify-center rounded-full border-2 border-slate-700 bg-[#0B0F19] text-slate-600 hover:border-cyan-500 hover:text-cyan-400 transition-all">
+          <ChevronLeft size={16} />
+        </button>
+        <p onClick={onOpenRimPicker} className="text-lg font-black uppercase tracking-wider text-white min-w-[200px] text-center cursor-pointer hover:text-cyan-400 transition-colors">
+          {rimMake} {rimModel}
+        </p>
+        <button onClick={() => cycleRim(1)} className="w-8 h-8 flex items-center justify-center rounded-full border-2 border-slate-700 bg-[#0B0F19] text-slate-600 hover:border-cyan-500 hover:text-cyan-400 transition-all">
+          <ChevronRight size={16} />
+        </button>
+      </div>
+      {/* Stacked wheel */}
+      <div className={`relative w-[300px] h-[300px] ${rollAnim}`} style={{animationDuration: '0.45s'}}>
+        {/* Tyre outer ring */}
+        <div onClick={onOpenTyrePicker} className="absolute inset-0 rounded-full overflow-hidden cursor-pointer border-4 border-slate-800 hover:border-purple-500 transition-all group" title="Click to browse tyre profiles">
+          <img src={formatImageUrl(tyreImg)} className="w-full h-full object-cover scale-[1.12] -translate-x-[1%] -translate-y-[1%]" alt="Tyre" />
+          <div className="absolute inset-0 flex items-center justify-center bg-black/70 backdrop-blur-sm opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
+            <span className="text-purple-400 font-black text-sm uppercase tracking-widest">Browse Tyres</span>
+          </div>
+        </div>
+        {/* Rim center */}
+        <div onClick={onOpenRimPicker} className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[70%] h-[70%] rounded-full overflow-hidden cursor-pointer z-10 bg-[#0B0F19] hover:shadow-[0_0_30px_rgba(0,217,255,0.5)] transition-all group" title="Click to browse rims">
+          <img src={formatImageUrl(rimImg)} className="w-full h-full object-cover scale-[1.45] -translate-y-[3%]" alt="Rim" />
+          <div className="absolute inset-0 flex items-center justify-center bg-black/70 backdrop-blur-sm opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
+            <span className="text-cyan-400 font-black text-sm uppercase tracking-widest">Browse Rims</span>
+          </div>
+        </div>
+      </div>
+      {/* Tyre profile label with arrows */}
+      <div className="flex items-center gap-3">
+        <button onClick={() => cycleTyre(-1)} className="w-8 h-8 flex items-center justify-center rounded-full border-2 border-slate-700 bg-[#0B0F19] text-slate-600 hover:border-purple-500 hover:text-purple-400 transition-all">
+          <ChevronLeft size={16} />
+        </button>
+        <p onClick={onOpenTyrePicker} className="text-[13px] font-black uppercase tracking-[0.3em] text-purple-400/70 italic min-w-[120px] text-center cursor-pointer hover:text-purple-300 transition-colors">
+          {tyreName}
+        </p>
+        <button onClick={() => cycleTyre(1)} className="w-8 h-8 flex items-center justify-center rounded-full border-2 border-slate-700 bg-[#0B0F19] text-slate-600 hover:border-purple-500 hover:text-purple-400 transition-all">
+          <ChevronRight size={16} />
+        </button>
+      </div>
+    </div>
+  );
+};
+
+// --- MAIN APP ---
 export default function App() {
   const [carFile, setCarFile] = useState(() => localStorage.getItem('tp_car') || '');
   const [frontRimMesh, setFrontRimMesh] = useState(() => localStorage.getItem('tp_frm') || '');
@@ -802,15 +885,25 @@ ${textureBlocks}
         </header>
 
         <div className="flex flex-col gap-12">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 xl:gap-12">
-            <div className="flex flex-col gap-6">
-              <SelectionCard label="Front Rim" make={frontMake} model={frontModel} img={currentFrontRim.img} set={() => setPickerOpen('front-rim')} colorTheme="cyan" isRim={true} />
-              <SelectionCard label="Front Profiling" make="" model={currentFrontTyre.name} img={currentFrontTyre.img} set={() => setPickerOpen('front-tyre-profile')} colorTheme="cyan" isProfiling={true} />
-            </div>
-            <div className="flex flex-col gap-6">
-              <SelectionCard label="Rear Rim" make={rearMake} model={rearModel} img={currentRearRim.img} set={() => setPickerOpen('rear-rim')} colorTheme="purple" isRim={true} />
-              <SelectionCard label="Rear Profiling" make="" model={currentRearTyre.name} img={currentRearTyre.img} set={() => setPickerOpen('rear-tyre-profile')} colorTheme="purple" isProfiling={true} />
-            </div>
+          <div className="flex justify-center gap-24 flex-wrap">
+            <WheelAssembly
+              side="Front" colorTheme="cyan"
+              rimMake={frontMake} rimModel={frontModel} rimImg={currentFrontRim.img}
+              tyreName={currentFrontTyre.name} tyreImg={currentFrontTyre.img} tyreKey={frontTyre}
+              onOpenRimPicker={() => setPickerOpen('front-rim')}
+              onOpenTyrePicker={() => setPickerOpen('front-tyre-profile')}
+              onRimChange={(make, model) => { setFrontMake(make); setFrontModel(model); }}
+              onTyreChange={(key) => setFrontTyre(key)}
+            />
+            <WheelAssembly
+              side="Rear" colorTheme="purple"
+              rimMake={rearMake} rimModel={rearModel} rimImg={currentRearRim.img}
+              tyreName={currentRearTyre.name} tyreImg={currentRearTyre.img} tyreKey={rearTyre}
+              onOpenRimPicker={() => setPickerOpen('rear-rim')}
+              onOpenTyrePicker={() => setPickerOpen('rear-tyre-profile')}
+              onRimChange={(make, model) => { setRearMake(make); setRearModel(model); }}
+              onTyreChange={(key) => setRearTyre(key)}
+            />
           </div>
 
           <div className="flex flex-col items-center gap-8">
@@ -914,6 +1007,20 @@ ${textureBlocks}
           0%, 100% { box-shadow: 0 0 25px #fbbf24, 0 0 50px #a855f7; }
           50% { box-shadow: 0 0 50px #fbbf24, 0 0 80px #a855f7; }
         }
+        @keyframes rollLeftKf {
+          0% { transform: translateX(60px) rotate(90deg); opacity: 0; }
+          60% { transform: translateX(-5px) rotate(-5deg); opacity: 1; }
+          80% { transform: translateX(2px) rotate(2deg); }
+          100% { transform: translateX(0) rotate(0deg); opacity: 1; }
+        }
+        @keyframes rollRightKf {
+          0% { transform: translateX(-60px) rotate(-90deg); opacity: 0; }
+          60% { transform: translateX(5px) rotate(5deg); opacity: 1; }
+          80% { transform: translateX(-2px) rotate(-2deg); }
+          100% { transform: translateX(0) rotate(0deg); opacity: 1; }
+        }
+        .roll-left { animation: rollLeftKf 0.45s cubic-bezier(0.25, 1, 0.5, 1); }
+        .roll-right { animation: rollRightKf 0.45s cubic-bezier(0.25, 1, 0.5, 1); }
       `}} />
     </div>
   );
