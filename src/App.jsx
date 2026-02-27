@@ -358,8 +358,8 @@ const WheelAssembly = ({ side, rimMake, rimModel, rimImg, tyreName, tyreImg, tyr
           </div>
         </div>
         {/* Rim center */}
-        <div onClick={onOpenRimPicker} className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[70%] h-[70%] rounded-full overflow-hidden cursor-pointer z-10 bg-[#0B0F19] hover:shadow-[0_0_30px_rgba(0,217,255,0.5)] transition-all group" title="Click to browse rims">
-          <img src={formatImageUrl(rimImg)} className="w-full h-full object-cover scale-[1.45] -translate-y-[3%]" alt="Rim" />
+        <div onClick={onOpenRimPicker} className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[66%] h-[66%] rounded-full overflow-hidden cursor-pointer z-10 bg-[#0B0F19] hover:shadow-[0_0_30px_rgba(0,217,255,0.5)] transition-all group" title="Click to browse rims">
+          <img src={formatImageUrl(rimImg)} className="w-full h-full object-cover scale-[1.45] -translate-y-[5%]" alt="Rim" />
           <div className="absolute inset-0 flex items-center justify-center bg-black/70 backdrop-blur-sm opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
             <span className="text-cyan-400 font-black text-sm uppercase tracking-widest">Browse Rims</span>
           </div>
