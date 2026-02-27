@@ -89,7 +89,7 @@ const RIM_DATABASE = {
     { name: "Equip_03_Deep", img: "id=1bHVjPW8UPnC2fw97b8JHp73rXpLj6hTA" }, { name: "Equip_03", img: "id=1_8fNAZNca68NW9l-nW_LPWQvVyaWyTuy" },
     { name: "Equip_05_Deep", img: "id=1TZGkYRhS0Jm_e9Y3jSWEqWXR3Af2zC7s" }, { name: "Equip_05", img: "id=1cr7IABXyo6_EO8df9Q66PwzRMX6GdcTe" },
     { name: "Equip_40", img: "id=1g24sNGQSau356Ucbx30MwpjkNlQ3fTJj" }, { name: "Kiwami_CR", img: "id=195VQc3_nwDUhZqHyr2emd9m7AwzSIgQx" },
-    { name: "Kiwami_Sticker", img: "id=1kh7GLHmkm_Rmv475_xJFxqiI_isjjn-s" }, { name: "Meister_L1", img: "id=1T6TeNtqGk1yqaZIx7fbuJK9snebv20Mu" },
+    { name: "Kiwami_Stickered", img: "id=1kh7GLHmkm_Rmv475_xJFxqiI_isjjn-s" }, { name: "Meister_L1", img: "id=1T6TeNtqGk1yqaZIx7fbuJK9snebv20Mu" },
     { name: "Meister_S1", img: "id=1ufqzpgy0kCzFbnniY_qWJi2oDTSNr_6T" }, { name: "VS_XX", img: "id=1vzsA-htawcdnfG9xve000uUTA4Al4lOW" },
     { name: "XD9", img: "id=1An7QmFb3BMV1zz5Mc3jXotNpnsANxd3D" }, { name: "Blitz_03", img: "id=1QwaztucADK2KywENVh_YXNv8fzYkGT-x" },
     { name: "CR2P", img: "id=1rZrRRV41FQ5d6tpQmS76atMr5bOxVr7-" }, { name: "M8R", img: "id=15isf-CBHVjm0CCYm7U9jeipl7hNPMxzn" }
