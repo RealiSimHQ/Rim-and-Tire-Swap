@@ -1,10 +1,54 @@
-import React, { useState, useMemo, useEffect } from 'react';
-import { Download, Car, Disc, Check, Copy, Layers, ClipboardPaste, Search, X, Image as ImageIcon, Trash2, Lock, Zap, Plus } from 'lucide-react';
+import React, { useState, useMemo, useEffect, useCallback } from 'react';
+import { Download, Car, Disc, Check, Copy, Layers, ClipboardPaste, Search, X, Image as ImageIcon, Trash2, Lock, Zap, Plus, Minus } from 'lucide-react';
 
 // External script for JSZip
 const JSZIP_URL = "https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js";
 
-// --- HELPER: GOOGLE DRIVE THUMBNAIL CONVERTER ---
+// --- PATREON OAUTH CONSTANTS ---
+const PATREON_CLIENT_ID = 'vq1EOHIoQ_2p_R0SVEcW3FRYvbMkcwMX1utj5hcvipJ3_1sSPethC5KM2FoiHZgS';
+const PATREON_REDIRECT = 'https://realisimhq.github.io/extended-physics-drift-edition/callback.html';
+const PATREON_OAUTH_URL = 'https://www.patreon.com/oauth2/authorize';
+const LOGO_ID = "1OM0G4EM2uSp7voB-CDIbB1Lj86rJD-cb";
+
+// --- TRIAL CONFIG ---
+const MAX_FREE_GENERATIONS = 5;
+
+// --- CONSTANTS & FORMULAS ---
+const INCH_TO_INTERNAL = 0.0250;
+const STEP_INCHES = 0.125;
+const STEP_INTERNAL = STEP_INCHES * INCH_TO_INTERNAL;
+
+const BASE_OFFSETS = {
+  front: 0.070,
+  rear: -0.055
+};
+
+// --- PATREON HELPERS ---
+function patreonLogin() {
+    const url = `${PATREON_OAUTH_URL}?response_type=code&client_id=${PATREON_CLIENT_ID}&redirect_uri=${encodeURIComponent(PATREON_REDIRECT)}&scope=identity%20identity%5Bemail%5D%20identity.memberships`;
+    window.location.href = url;
+}
+
+function checkPatreonSession() {
+    const auth = sessionStorage.getItem('patreon_authorized');
+    const until = parseInt(sessionStorage.getItem('patreon_until') || '0');
+    if (auth === 'true' && Date.now() < until) {
+        return sessionStorage.getItem('patreon_name') || 'Patron';
+    }
+    return null;
+}
+
+function getRemainingTrials() {
+    const used = parseInt(localStorage.getItem('rt_config_trial_count') || '0', 10);
+    return Math.max(0, MAX_FREE_GENERATIONS - used);
+}
+
+function incrementTrialUsed() {
+    const used = parseInt(localStorage.getItem('rt_config_trial_count') || '0', 10);
+    localStorage.setItem('rt_config_trial_count', (used + 1).toString());
+}
+
+// --- GENERAL HELPERS ---
 const formatImageUrl = (url) => {
   if (!url) return "";
   const driveMatch = url.match(/\/(?:file\/d\/|open\?id=)([a-zA-Z0-9_-]+)/) || url.match(/id=([a-zA-Z0-9_-]+)/);
@@ -12,6 +56,29 @@ const formatImageUrl = (url) => {
     return `https://drive.google.com/thumbnail?id=${driveMatch[1]}&sz=w1000`;
   }
   return url;
+};
+
+const getFraction = (val) => {
+  const absVal = Math.abs(val);
+  const sign = val < -0.0001 ? "-" : "";
+  const whole = Math.floor(absVal + 0.0001);
+  const remainder = absVal - whole;
+
+  const eighths = Math.round(remainder * 8);
+  
+  let fracPart = "";
+  if (eighths === 1) fracPart = "1/8";
+  else if (eighths === 2) fracPart = "1/4";
+  else if (eighths === 3) fracPart = "3/8";
+  else if (eighths === 4) fracPart = "1/2";
+  else if (eighths === 5) fracPart = "5/8";
+  else if (eighths === 6) fracPart = "3/4";
+  else if (eighths === 7) fracPart = "7/8";
+  else if (eighths === 8) return `${sign}${whole + 1}"`;
+
+  if (eighths === 0) return whole === 0 ? `0"` : `${sign}${whole}"`;
+  if (whole === 0) return `${sign}${fracPart}"`;
+  return `${sign}${whole} ${fracPart}"`;
 };
 
 // --- TAILWIND COLOR MAP ---
@@ -24,7 +91,10 @@ const COLORS = {
     groupHoverBorder: "group-hover:border-cyan-500",
     groupHoverShadow: "group-hover:shadow-cyan-500/30",
     labelValue: "text-cyan-500",
-    crosshair: "bg-cyan-500/30"
+    accent: "accent-cyan-500",
+    bg: "bg-cyan-500",
+    bgFade: "bg-cyan-500/10",
+    glow: "shadow-[0_0_20px_rgba(34,211,238,0.4)]"
   },
   purple: {
     text: "text-purple-400",
@@ -34,7 +104,10 @@ const COLORS = {
     groupHoverBorder: "group-hover:border-purple-500",
     groupHoverShadow: "group-hover:shadow-purple-500/30",
     labelValue: "text-purple-500",
-    crosshair: "bg-purple-500/30"
+    accent: "accent-purple-500",
+    bg: "bg-purple-500",
+    bgFade: "bg-purple-500/10",
+    glow: "shadow-[0_0_20px_rgba(168,85,247,0.4)]"
   }
 };
 
@@ -42,29 +115,29 @@ const COLORS = {
 const TYRE_STYLES = {
   Stock: {
     name: "Tyre Stock",
-    front: { rim: "0.241, 0.204", tyre: "0.209, 0.205", offset: "0.07, 0.0" },
-    rear: { rim: "0.240, 0.180", tyre: "0.209, 0.185", offset: "0.00, -0.055" },
+    front: { rim: "0.241, 0.204", tyre: "0.209, 0.205" },
+    rear: { rim: "0.240, 0.180", tyre: "0.209, 0.185" },
     file: "Tyre_Stock.kn5",
     img: "id=1Ru91mDv-nQF8aFT1UHKcRlbHF78tiJh4"
   },
   Pro: {
     name: "Tyre Pro",
-    front: { rim: "0.200, 0.195", tyre: "0.209, 0.205", offset: "0.07, 0.0" },
-    rear: { rim: "0.200, 0.180", tyre: "0.209, 0.185", offset: "0.00, -0.055" },
+    front: { rim: "0.200, 0.195", tyre: "0.209, 0.205" },
+    rear: { rim: "0.200, 0.180", tyre: "0.209, 0.185" },
     file: "Tyre_Pro.kn5",
     img: "id=1FynBqQ4jbs3KotrP7p8XBwMzLDMg7WRK"
   },
   Stretched: {
     name: "Tyre Stretched",
-    front: { rim: "0.201, 0.204", tyre: "0.209, 0.205", offset: "0.07, 0.0" },
-    rear: { rim: "0.200, 0.180", tyre: "0.209, 0.185", offset: "0.00, -0.055" },
+    front: { rim: "0.201, 0.204", tyre: "0.209, 0.205" },
+    rear: { rim: "0.200, 0.180", tyre: "0.209, 0.185" },
     file: "Tyre_Stretched.kn5",
     img: "id=1g_RK_e-WQHHrkIwRpeBKkJUrrxA_Xtb_"
   },
   Thicc: {
     name: "Tyre Thicc",
-    front: { rim: "0.225, 0.21", tyre: "0.209, 0.205", offset: "0.07, 0.0" },
-    rear: { rim: "0.225, 0.195", tyre: "0.209, 0.185", offset: "0.00, -0.055" },
+    front: { rim: "0.225, 0.21", tyre: "0.209, 0.205" },
+    rear: { rim: "0.225, 0.195", tyre: "0.209, 0.185" },
     file: "Tyre_Thicc.kn5",
     img: "id=1dQj2_6L1xzm3ycJW2Bt0kwq4Xsq-g-wc"
   }
@@ -85,7 +158,7 @@ const TEXTURE_DATABASE = {
   "Kumho": [{ name: "Standard", key: "Kumho", img: "id=192AnYt0hk2-nYhT5RDxYAffvRynSXj5q" }],
   "Nitto": [{ name: "NT05", key: "Nitto", img: "id=1bIAI_Z_XVH7u_1QNA3xtOe9gNrjqY20k" }],
   "Toyo": [
-    { name: "Proxes Prox", key: "Toyo_Proxies_prox", img: "id=1wP6ys5Ip--GTUakhtpwTNmTVUCCjof2l" },
+    { name: "Proxes Prox", key: "Toyo_Proxies_prox", img: "id=1wP6ys5Ip--GTUakhtpwTNmTVUCCof2l" },
     { name: "Proxes Standard", key: "Toyo_Proxies", img: "id=1rVHk-bZj4frNyxSngyYVDOFdn72Erv4j" }
   ],
   "Valino": [{ name: "Pergea 08R", key: "Valino_Pergea", img: "id=1UFWu3Ob-_-Mc4Z1ynrOAfqDep6kctotJ" }]
@@ -197,12 +270,71 @@ const RIM_DATABASE = {
   "ZP_Forged": [{ name: "Mono_3", img: "id=1S4QOUz2kcHn3zUgeLuzVys3yqVNwJcDR" }]
 };
 
-const LOGO_ID = "1OM0G4EM2uSp7voB-CDIbB1Lj86rJD-cb";
-const RIM_MAKES = Object.keys(RIM_DATABASE).sort();
-const TEXTURE_MAKES = Object.keys(TEXTURE_DATABASE).sort();
-
 // --- STANDALONE UI COMPONENTS ---
-const SmartPasteBar = ({ label, value, setter, colorTheme, hideHistory = false }) => {
+// (I kept your exact components unchanged)
+
+const OffsetController = ({ label, value, base, setter, colorTheme }) => {
+  const c = COLORS[colorTheme];
+  const [activeAnim, setActiveAnim] = useState(null); 
+  
+  const inches = (value - base) / INCH_TO_INTERNAL;
+  const fractionStr = getFraction(inches);
+  
+  const triggerAnim = (type) => {
+    setActiveAnim(type);
+    setTimeout(() => setActiveAnim(null), 600);
+  };
+
+  const moveIn = () => {
+    setter(Math.max(-0.500, value - STEP_INTERNAL));
+    triggerAnim('minus');
+  };
+  
+  const moveOut = () => {
+    setter(Math.min(0.500, value + STEP_INTERNAL));
+    triggerAnim('plus');
+  };
+
+  const borderClass = activeAnim === 'plus' 
+    ? 'border-green-500 shadow-[0_0_30px_rgba(34,197,94,0.4)]' 
+    : activeAnim === 'minus' 
+    ? 'border-yellow-500 shadow-[0_0_30px_rgba(234,179,8,0.4)]' 
+    : 'border-slate-800';
+
+  return (
+    <div className="w-full bg-[#151B28] rounded-[3.5rem] border border-slate-800/80 p-8 flex flex-col items-center gap-6 shadow-2xl relative">
+      <h3 className={`text-[13px] font-black uppercase tracking-[0.4em] ${c.textFade} italic mb-2`}>{label}</h3>
+      
+      <div className="flex items-center justify-between w-full gap-6">
+        <button 
+          onClick={moveIn}
+          className="w-24 h-24 bg-[#0B0F19] rounded-[2rem] border-4 border-slate-800 hover:border-yellow-500 transition-all active:scale-90 flex flex-col items-center justify-center group shadow-xl"
+        >
+          <Minus size={32} className="text-slate-600 group-hover:text-yellow-500 transition-colors" />
+          <span className="text-[9px] font-black uppercase text-slate-700 group-hover:text-yellow-500/50 mt-1">Move In</span>
+        </button>
+
+        <div className={`flex-1 bg-[#0B0F19] rounded-[2.5rem] border-4 ${borderClass} p-6 transition-all duration-300 flex flex-col items-center justify-center shadow-inner relative overflow-hidden h-24`}>
+           <div className="flex flex-col items-center relative z-10">
+              <span className={`text-[28px] font-black ${c.text} font-mono tracking-tighter leading-none drop-shadow-[0_0_15px_rgba(0,0,0,0.8)]`}>
+                {fractionStr}
+              </span>
+           </div>
+        </div>
+
+        <button 
+          onClick={moveOut}
+          className="w-24 h-24 bg-[#0B0F19] rounded-[2rem] border-4 border-slate-800 hover:border-green-500 transition-all active:scale-90 flex flex-col items-center justify-center group shadow-xl"
+        >
+          <Plus size={32} className="text-slate-600 group-hover:text-green-500 transition-colors" />
+          <span className="text-[9px] font-black uppercase text-slate-700 group-hover:text-green-500/50 mt-1">Move Out</span>
+        </button>
+      </div>
+    </div>
+  );
+};
+
+const SmartPasteBar = ({ label, value, setter, colorTheme }) => {
   const c = COLORS[colorTheme];
   const [error, setError] = useState('');
   const handlePaste = async () => {
@@ -255,27 +387,11 @@ const SmartPasteBar = ({ label, value, setter, colorTheme, hideHistory = false }
           </button>
         )}
       </div>
-      {!hideHistory && (
-        <div className="bg-[#0B0F19] rounded-[2.5rem] border border-slate-800 p-8 flex-1 overflow-y-auto custom-scrollbar shadow-inner min-h-[160px] max-h-[240px] w-full">
-          <div className="flex items-center justify-between sticky top-0 bg-[#0B0F19] pb-4 mb-4 border-b border-slate-800/40 z-10">
-            <p className="text-[13px] font-black uppercase text-slate-600 tracking-[0.2em]">{label} HISTORY</p>
-            <span className={`text-[12px] ${c.labelValue} font-black tracking-widest uppercase italic`}>{value.split(',').filter(x => x.trim()).length} Items</span>
-          </div>
-          <div className="space-y-2 text-left">
-            {value.split(',').filter(x => x.trim()).map((mesh, i) => (
-              <div key={i} className={`text-[13px] font-mono py-1.5 truncate flex items-center gap-3 ${c.textFade} ${c.hoverText} transition-colors`}>
-                <span className="text-slate-800 w-6 text-right font-black">#{i+1}</span> {mesh.trim()}
-              </div>
-            ))}
-            {!value && <p className="text-[12px] italic text-slate-800 mt-6 text-center tracking-widest font-black opacity-30">AWAITING INPUT...</p>}
-          </div>
-        </div>
-      )}
     </div>
   );
 };
 
-const SelectionCard = ({ label, make, model, img, set, offset, colorTheme, isTexture, isRim, isProfiling, onRemove, showRemove }) => {
+const SelectionCard = ({ label, make, model, img, set, colorTheme, isTexture, isRim, isProfiling, onRemove, showRemove }) => {
   const c = COLORS[colorTheme];
   const defaultImgClass = isTexture 
     ? "w-full h-full object-cover scale-[1.07]" 
@@ -287,11 +403,30 @@ const SelectionCard = ({ label, make, model, img, set, offset, colorTheme, isTex
     ? `${defaultImgClass} -translate-x-[1.25%] -translate-y-[0.75%]`
     : defaultImgClass;
 
+  const renderHeader = () => {
+    if (typeof label === 'object') {
+      return (
+        <div className="flex flex-col items-center justify-center w-full text-center gap-0.5 py-1">
+          <p className="text-[12px] font-black uppercase text-slate-500 tracking-wider whitespace-normal leading-tight px-2">
+            Name={label.name}
+          </p>
+          <p className="text-[11px] font-black uppercase text-slate-600 tracking-wider whitespace-normal leading-tight px-2">
+            Short-name={label.shortName}
+          </p>
+        </div>
+      );
+    }
+    return (
+      <span className="text-[28px] font-black uppercase text-slate-500 tracking-[0.15em] shrink-0 text-center leading-none py-1 drop-shadow-lg">
+        {label}
+      </span>
+    );
+  };
+
   return (
-    <div className={`bg-[#151B28] ${isTexture ? 'p-6' : 'p-8'} rounded-[3.5rem] border border-slate-800/80 flex flex-col items-center shadow-2xl space-y-8 w-full h-full transition-all relative`}>
-      <div className={`flex items-center ${offset ? 'justify-between' : 'justify-center'} w-full border-b border-slate-800/50 pb-5 px-4`}>
-        <span className="text-[15px] font-black uppercase text-slate-500 tracking-[0.2em]">{label}</span>
-        {offset && <span className={`text-[11px] font-black px-4 py-1.5 bg-[#0B0F19] ${c.labelValue} rounded-full border border-slate-800 shadow-inner`}>{offset} OFFSET</span>}
+    <div className={`bg-[#151B28] ${isTexture ? 'p-5' : 'p-8 pt-6'} rounded-[3.5rem] border border-slate-800/80 flex flex-col items-center shadow-2xl space-y-5 w-full h-full transition-all relative overflow-hidden`}>
+      <div className={`flex items-center justify-center w-full border-b border-slate-800/50 pb-2 px-4 gap-4`}>
+        {renderHeader()}
       </div>
 
       {isTexture && showRemove && (
@@ -319,8 +454,8 @@ const SelectionCard = ({ label, make, model, img, set, offset, colorTheme, isTex
         
         {!isTexture && (
           <>
-            {make && <p className="text-[13px] font-black text-slate-700 uppercase tracking-[0.3em] mb-3 font-mono italic">{make}</p>}
-            <p className="text-[28px] font-black text-white uppercase italic truncate tracking-tighter leading-none w-full px-4">{model}</p>
+            {make && <p className="text-[13px] font-black text-slate-700 uppercase tracking-[0.3em] mb-3 font-mono italic text-center">{make}</p>}
+            <p className="text-[28px] font-black text-white uppercase italic truncate tracking-tighter leading-none w-full px-4 mb-2 text-center">{model}</p>
           </>
         )}
       </div>
@@ -336,10 +471,9 @@ export default function App() {
   const [frontTireMesh, setFrontTireMesh] = useState(() => localStorage.getItem('tp_ftm') || '');
   const [rearTireMesh, setRearTireMesh] = useState(() => localStorage.getItem('tp_rtm') || '');
 
-  // MULTI TIRE TEXTURE LIST
   const [texList, setTexList] = useState(() => {
     const saved = localStorage.getItem('tp_tex_list');
-    return saved ? JSON.parse(saved) : [{ make: 'Valino', model: 'Pergea 08R' }];
+    return saved ? JSON.parse(saved) : [{ make: 'Valino', model: 'Pergea 08R', label: 'Standard' }];
   });
 
   const [isDragging, setIsDragging] = useState(false);
@@ -347,13 +481,26 @@ export default function App() {
   const [copySuccess, setCopySuccess] = useState(false);
   const [pickerOpen, setPickerOpen] = useState(null);
 
-  // Rim & Tyre Profile states
   const [frontMake, setFrontMake] = useState('Advan');
   const [frontModel, setFrontModel] = useState('A3A');
   const [frontTyre, setFrontTyre] = useState('Stretched');
   const [rearMake, setRearMake] = useState('Work');
   const [rearModel, setRearModel] = useState('Blitz');
   const [rearTyre, setRearTyre] = useState('Thicc');
+
+  const [frontOffset, setFrontOffset] = useState(() => parseFloat(localStorage.getItem('tp_f_off')) || BASE_OFFSETS.front);
+  const [rearOffset, setRearOffset] = useState(() => parseFloat(localStorage.getItem('tp_r_off')) || BASE_OFFSETS.rear);
+
+  // --- PATREON STATE ---
+  const [patronName, setPatronName] = useState(null);
+  const [showGate, setShowGate] = useState(false);
+  const [isCheckingAuth, setIsCheckingAuth] = useState(true);
+
+  useEffect(() => {
+      const name = checkPatreonSession();
+      setPatronName(name);
+      setIsCheckingAuth(false);
+  }, []);
 
   useEffect(() => {
     localStorage.setItem('tp_car', carFile);
@@ -362,7 +509,9 @@ export default function App() {
     localStorage.setItem('tp_ftm', frontTireMesh);
     localStorage.setItem('tp_rtm', rearTireMesh);
     localStorage.setItem('tp_tex_list', JSON.stringify(texList));
-  }, [carFile, frontRimMesh, rearRimMesh, frontTireMesh, rearTireMesh, texList]);
+    localStorage.setItem('tp_f_off', frontOffset);
+    localStorage.setItem('tp_r_off', rearOffset);
+  }, [carFile, frontRimMesh, rearRimMesh, frontTireMesh, rearTireMesh, texList, frontOffset, rearOffset]);
 
   const currentFrontRim = useMemo(() => RIM_DATABASE[frontMake]?.find(m => m.name === frontModel) || RIM_DATABASE[frontMake]?.[0], [frontMake, frontModel]);
   const currentRearRim = useMemo(() => RIM_DATABASE[rearMake]?.find(m => m.name === rearModel) || RIM_DATABASE[rearMake]?.[0], [rearMake, rearModel]);
@@ -373,11 +522,14 @@ export default function App() {
     const ftData = TYRE_STYLES[frontTyre];
     const rtData = TYRE_STYLES[rearTyre];
     const clean = (str) => str.trim().replace(/,$/, '').replace(/,\s*$/, '');
+    const fOffStr = `${frontOffset.toFixed(3)}, 0.0`;
+    const rOffStr = `${rearOffset.toFixed(3)}, 0.0`;
 
-    // Build Texture Entries
     const textureBlocks = texList.map((tex, idx) => {
-      const entry = TEXTURE_DATABASE[tex.make]?.find(m => m.name === tex.model) || TEXTURE_DATABASE["Valino"]?.[0];
-      return `;----${tex.make}----;
+      const entryArr = TEXTURE_DATABASE[tex.make];
+      const entry = entryArr?.find(m => m.name === tex.model) || entryArr?.[0] || TEXTURE_DATABASE["Valino"][0];
+      const labelText = typeof tex.label === 'object' ? `${tex.label.name}-${tex.label.shortName}` : (tex.label || tex.make);
+      return `;----${labelText}----;
 ${getTextureINI(entry.key, idx)}`;
     }).join('\n\n');
 
@@ -392,13 +544,13 @@ ${getTextureINI(entry.key, idx)}`;
 File = ${clean(carFile)}
 OriginalRims = ${clean(frontRimMesh)}
 Model = /../../parts/rims/${frontMake}/${frontModel}.kn5, ${ftData.front.rim}
-Offset = ${ftData.front.offset}
+Offset = ${fOffStr}
 FrontOnly=1
 [ReplaceRims]
 File = ${clean(carFile)}
 OriginalRims = ${clean(frontTireMesh)}
 Model = /../../parts/tyre/${ftData.file}, ${ftData.front.tyre}
-Offset = ${ftData.front.offset}
+Offset = ${fOffStr}
 FrontOnly=1
 
 ; --- REAR SETUP ---
@@ -406,13 +558,13 @@ FrontOnly=1
 File = ${clean(carFile)}
 OriginalRims = ${clean(rearRimMesh)}
 Model = /../../parts/rims/${rearMake}/${rearModel}.kn5, ${rtData.rear.rim}
-Offset = ${rtData.rear.offset}
+Offset = ${rOffStr}
 RearOnly=1
 [ReplaceRims]
 File = ${clean(carFile)}
 OriginalRims = ${clean(rearTireMesh)}
 Model = /../../parts/tyre/${rtData.file}, ${rtData.rear.tyre}
-Offset = ${rtData.rear.offset}
+Offset = ${rOffStr}
 RearOnly=1
 
 ;===================================================================================================================
@@ -442,28 +594,63 @@ ${textureBlocks}
 
 ;===================================================================================================================
 `;
-  }, [carFile, frontRimMesh, rearRimMesh, frontTireMesh, rearTireMesh, frontMake, frontModel, frontTyre, rearMake, rearModel, rearTyre, texList]);
+  }, [carFile, frontRimMesh, rearRimMesh, frontTireMesh, rearTireMesh, frontMake, frontModel, frontTyre, rearMake, rearModel, rearTyre, texList, frontOffset, rearOffset]);
 
   const handleDrop = async (e) => {
     e.preventDefault();
     setIsDragging(false);
     const items = e.dataTransfer.items;
     if (!items) return;
+
     const kn5List = [];
-    const traverseEntry = async (entry) => {
+    let tyresIniFile = null;
+
+    const traverseEntry = async (entry, path = "") => {
       if (entry.isFile) {
-        if (entry.name.toLowerCase().endsWith('.kn5') && entry.name.toLowerCase() !== 'collider.kn5') kn5List.push(entry.name);
+        const name = entry.name.toLowerCase();
+        if (name.endsWith('.kn5') && name !== 'collider.kn5') kn5List.push(entry.name);
+        if (name === 'tyres.ini' && path.toLowerCase().includes('data')) {
+            tyresIniFile = entry;
+        }
       } else if (entry.isDirectory) {
         const reader = entry.createReader();
         const entries = await new Promise(resolve => reader.readEntries(resolve));
-        for (const child of entries) await traverseEntry(child);
+        for (const child of entries) await traverseEntry(child, path + "/" + entry.name);
       }
     };
+
     for (let i = 0; i < items.length; i++) {
       const entry = items[i].webkitGetAsEntry();
       if (entry) await traverseEntry(entry);
     }
+
     if (kn5List.length > 0) setCarFile(kn5List.join(', '));
+
+    if (tyresIniFile) {
+        const file = await new Promise(resolve => tyresIniFile.file(resolve));
+        const text = await file.text();
+        const compounds = [];
+        const compoundBlocks = text.split(/\[COMPOUND_/i);
+        compoundBlocks.forEach(block => {
+            const nameMatch = block.match(/NAME\s*=\s*([^\r\n]+)/i);
+            const shortMatch = block.match(/SHORT_NAME\s*=\s*([^\r\n]+)/i);
+            if (nameMatch && shortMatch) {
+                compounds.push(JSON.stringify({ 
+                  name: nameMatch[1].trim(), 
+                  shortName: shortMatch[1].trim() 
+                }));
+            }
+        });
+        const uniqueCompounds = [...new Set(compounds)].map(c => JSON.parse(c));
+        if (uniqueCompounds.length > 0) {
+            const newTexList = uniqueCompounds.map(data => ({
+                make: 'Valino',
+                model: 'Pergea 08R',
+                label: data
+            }));
+            setTexList(newTexList);
+        }
+    }
   };
 
   const copyToClipboard = () => {
@@ -480,33 +667,45 @@ ${textureBlocks}
   };
 
   const handleGenerate = async () => {
-    setGenStep('generating');
-    setTimeout(async () => {
-      try {
-        if (!window.JSZip) {
-          const script = document.createElement('script');
-          script.src = JSZIP_URL;
-          document.head.appendChild(script);
-          await new Promise(resolve => script.onload = resolve);
-        }
-        const zip = new window.JSZip();
-        zip.file("ext_config.ini", iniContent);
-        const blob = await zip.generateAsync({ type: "blob" });
-        const url = URL.createObjectURL(blob);
-        const link = document.createElement("a");
-        link.href = url;
-        link.download = `skin_${frontModel}_${rearModel}.zip`;
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-        URL.revokeObjectURL(url);
-        setGenStep('trial');
-      } catch (e) { setGenStep('idle'); }
-    }, 500);
+    const patron = checkPatreonSession();
+
+    if (patron) {
+      // Subscribed user = Copy button
+      copyToClipboard();
+    } else if (getRemainingTrials() > 0) {
+      // Trial user = Generate
+      incrementTrialUsed();
+      setGenStep('generating');
+      setTimeout(async () => {
+        try {
+          if (!window.JSZip) {
+            const script = document.createElement('script');
+            script.src = JSZIP_URL;
+            document.head.appendChild(script);
+            await new Promise(resolve => script.onload = resolve);
+          }
+          const zip = new window.JSZip();
+          zip.file("ext_config.ini", iniContent);
+          const blob = await zip.generateAsync({ type: "blob" });
+          const url = URL.createObjectURL(blob);
+          const link = document.createElement("a");
+          link.href = url;
+          link.download = `skin_${frontModel}_${rearModel}.zip`;
+          document.body.appendChild(link);
+          link.click();
+          document.body.removeChild(link);
+          URL.revokeObjectURL(url);
+        } catch (e) { console.error(e); }
+        setGenStep('idle');
+      }, 500);
+    } else {
+      // No generations left
+      setShowGate(true);
+    }
   };
 
   const addTexture = () => {
-    setTexList([...texList, { make: 'Valino', model: 'Pergea 08R' }]);
+    setTexList([...texList, { make: 'Valino', model: 'Pergea 08R', label: 'Standard' }]);
   };
 
   const removeTexture = (idx) => {
@@ -518,12 +717,31 @@ ${textureBlocks}
   };
 
   return (
-    <div className="min-h-screen bg-[#0B0F19] text-white font-sans px-6 md:px-12 selection:bg-cyan-500/30 overflow-x-hidden">
+    <div className="min-h-screen bg-[#0B0F19] text-white font-sans px-6 md:px-12 selection:bg-cyan-500/30 overflow-x-hidden pb-24 relative">
+      
+      {/* PATREON STATUS HEADER */}
+      <div className="absolute top-6 right-8 z-40">
+        {isCheckingAuth ? (
+          <span className="text-slate-500 text-xs font-black uppercase tracking-widest animate-pulse">Checking Patreon...</span>
+        ) : patronName ? (
+          <div className="flex items-center gap-3 bg-green-500/10 border border-green-500/30 px-6 py-2.5 rounded-full shadow-xl">
+             <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></span>
+             <span className="text-green-400 text-xs font-black uppercase tracking-widest italic">Patron: {patronName} ✓</span>
+          </div>
+        ) : (
+          <button 
+            onClick={patreonLogin}
+            className="flex items-center gap-3 bg-[#FF424D] hover:bg-[#E33B44] text-white px-8 py-3 rounded-full font-black text-xs uppercase tracking-widest transition-all shadow-2xl active:scale-95 border border-white/10"
+          >
+            <ImageIcon size={14} className="fill-white" /> Login with Patreon
+          </button>
+        )}
+      </div>
+
       {/* GEN MODALS */}
-      {genStep !== 'idle' && (
-        <div onClick={() => genStep === 'trial' && setGenStep('idle')} className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/90 backdrop-blur-2xl animate-in fade-in duration-300">
-          <div onClick={e => e.stopPropagation()} className="w-full max-w-lg bg-[#151B28] border border-slate-800 rounded-[3.5rem] shadow-2xl p-14 text-center space-y-8 relative overflow-hidden">
-            {genStep === 'generating' ? (
+      {genStep === 'generating' && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/90 backdrop-blur-2xl animate-in fade-in duration-300">
+          <div className="w-full max-w-lg bg-[#151B28] border border-slate-800 rounded-[3.5rem] shadow-2xl p-14 text-center space-y-8 relative overflow-hidden">
               <div className="space-y-6 py-4 animate-in zoom-in-95 duration-300">
                 <img src={formatImageUrl(`id=${LOGO_ID}`)} alt="Logo" className="h-20 mx-auto mb-4" />
                 <div className="relative mx-auto w-24 h-24 flex items-center justify-center">
@@ -532,19 +750,46 @@ ${textureBlocks}
                   <Zap className="text-cyan-400 fill-cyan-400 animate-pulse" size={36} />
                 </div>
                 <h3 className="text-2xl font-black tracking-tight mb-2 uppercase italic text-center text-white">Generating pack...</h3>
-                <p className="text-slate-400 text-[10px] tracking-[0.2em] uppercase font-black italic">RealiSim HQ Rim and Tyre</p>
-                <div className="text-xs text-slate-500 italic mt-6 pt-4 border-t border-slate-800/50">Thank you for your continued support! 🙏</div>
+                <p className="text-slate-400 text-[10px] tracking-[0.2em] uppercase font-black italic">HQ Rim and Tyre</p>
               </div>
-            ) : (
-              <div className="space-y-8 py-4 animate-in slide-in-from-bottom-4 duration-500">
-                <div className="w-20 h-20 mx-auto bg-amber-500/10 rounded-3xl flex items-center justify-center text-amber-500 border border-amber-500/20"><Lock size={40} /></div>
-                <h3 className="text-3xl font-black tracking-tighter mb-3 uppercase italic text-center text-white">Trial Used</h3>
-                <p className="text-slate-400 text-sm leading-relaxed max-w-xs mx-auto font-medium text-center">Free generation limit reached. Subscribe to continue.</p>
-                <a href="https://www.patreon.com/membership/26118508" target="_blank" className="flex items-center justify-center gap-3 w-full bg-[#FF424D] hover:bg-[#E33B44] text-white py-6 rounded-2xl font-black text-sm uppercase tracking-widest transition-all shadow-xl">Login with Patreon</a>
-                <p className="text-[11px] text-slate-500 text-center font-bold italic">Not a member? <a href="https://www.patreon.com/membership/26118508" className="text-cyan-400 hover:underline">Join here</a></p>
-              </div>
-            )}
             <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-transparent via-cyan-500 to-transparent opacity-50"></div>
+          </div>
+        </div>
+      )}
+
+      {/* TRIAL GATE MODAL */}
+      {showGate && (
+        <div className="fixed inset-0 z-[101] flex items-center justify-center p-4 bg-black/95 backdrop-blur-2xl animate-in fade-in duration-300">
+          <div className="w-full max-w-md bg-[#151B28] border border-slate-800 rounded-[3.5rem] shadow-2xl p-12 text-center space-y-8 relative">
+            <div className="w-20 h-20 bg-amber-500/10 rounded-3xl flex items-center justify-center mx-auto text-amber-500 border border-amber-500/20">
+              <Lock size={40} />
+            </div>
+
+            <h3 className="text-3xl font-black uppercase italic text-white tracking-tighter">Free Trial Used</h3>
+
+            <div className="space-y-2">
+              <p className="text-slate-400 text-sm leading-relaxed font-medium">You've used all 5 free generations.</p>
+              <p className="text-slate-400 text-sm leading-relaxed font-medium">Subscribe to the $10 tier for unlimited access.</p>
+            </div>
+
+            <div className="pt-4 flex flex-col gap-4">
+              <a 
+                href="https://www.patreon.com/membership/26118508" 
+                target="_blank"
+                className="w-full py-6 bg-[#FF424D] hover:bg-[#E33B44] text-white rounded-2xl font-black text-sm uppercase tracking-widest transition-all shadow-xl block"
+              >
+                Subscribe Now – $10/month
+              </a>
+              
+              <button 
+                onClick={() => setShowGate(false)}
+                className="text-slate-400 hover:text-white transition-colors text-sm underline font-bold"
+              >
+                Close
+              </button>
+            </div>
+            
+            <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-transparent via-amber-500 to-transparent opacity-40"></div>
           </div>
         </div>
       )}
@@ -662,28 +907,23 @@ ${textureBlocks}
       {/* MAIN LAYOUT WRAPPER */}
       <div className="max-w-[1900px] mx-auto pt-10 pb-12 h-full flex flex-col">
         
-        {/* HEADER */}
         <header className="flex flex-col items-center justify-center space-y-4 pb-10">
-          <img src={formatImageUrl(`id=${LOGO_ID}`)} alt="RealiSim HQ" className="h-32 md:h-40 drop-shadow-[0_0_35px_rgba(34,211,238,0.6)]" />
+          <img src={formatImageUrl(`id=${LOGO_ID}`)} alt="Logo" className="h-32 md:h-40 drop-shadow-[0_0_35px_rgba(34,211,238,0.6)]" />
           <h1 className="text-5xl md:text-[4.5rem] font-black tracking-tighter uppercase italic leading-none text-center text-white">
-            <span className="bg-gradient-to-r from-cyan-400 to-cyan-100 bg-clip-text text-transparent">RealiSim HQ</span> <span className="bg-gradient-to-r from-white to-purple-400 bg-clip-text text-transparent">Rim and Tyre</span>
+            <span className="bg-gradient-to-r from-white to-purple-400 bg-clip-text text-transparent">Rim and Tyre</span>
           </h1>
         </header>
 
         <div className="flex flex-col gap-12">
           
-          {/* 1. AXLES BLOCK */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8 xl:gap-12">
-            
-            {/* FRONT AXLE */}
-            <div className="flex flex-col gap-8 xl:gap-12">
+            <div className="flex flex-col gap-6">
                <SelectionCard
                  label="Front Rim"
                  make={frontMake}
                  model={frontModel}
                  img={currentFrontRim.img}
                  set={() => setPickerOpen('front-rim')}
-                 offset="0.07"
                  colorTheme="cyan"
                  isRim={true}
                />
@@ -693,21 +933,18 @@ ${textureBlocks}
                  model={currentFrontTyre.name}
                  img={currentFrontTyre.img}
                  set={() => setPickerOpen('front-tyre-profile')}
-                 offset="0.07"
                  colorTheme="cyan"
                  isProfiling={true}
                />
             </div>
 
-            {/* REAR AXLE */}
-            <div className="flex flex-col gap-8 xl:gap-12">
+            <div className="flex flex-col gap-6">
                <SelectionCard
                  label="Rear Rim"
                  make={rearMake}
                  model={rearModel}
                  img={currentRearRim.img}
                  set={() => setPickerOpen('rear-rim')}
-                 offset="-0.055"
                  colorTheme="purple"
                  isRim={true}
                />
@@ -717,20 +954,18 @@ ${textureBlocks}
                  model={currentRearTyre.name}
                  img={currentRearTyre.img}
                  set={() => setPickerOpen('rear-tyre-profile')}
-                 offset="-0.055"
                  colorTheme="purple"
                  isProfiling={true}
                />
             </div>
           </div>
 
-          {/* 2. MULTI TIRE TEXTURE SECTION */}
           <div className="flex flex-col items-center gap-8">
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 gap-8 w-full max-w-[1500px] justify-items-center">
               {texList.map((tex, idx) => (
                 <div key={idx} className="w-full max-w-[620px]">
                   <SelectionCard
-                    label={idx === 0 ? "TIRE TEXTURE" : `TIRE TEXTURE #${idx + 1}`}
+                    label={tex.label || "TIRE TEXTURE"}
                     make={tex.make}
                     model={tex.model}
                     img={TEXTURE_DATABASE[tex.make]?.find(m => m.name === tex.model)?.img}
@@ -743,7 +978,6 @@ ${textureBlocks}
                 </div>
               ))}
               
-              {/* ADD TEXTURE BUTTON CARD */}
               <div 
                 onClick={addTexture}
                 className="w-full max-w-[620px] bg-[#151B28]/40 border-2 border-dashed border-slate-800 rounded-[3.5rem] min-h-[400px] flex flex-col items-center justify-center group cursor-pointer hover:border-cyan-500/50 transition-all hover:bg-cyan-500/5"
@@ -756,7 +990,6 @@ ${textureBlocks}
             </div>
           </div>
 
-          {/* 3. DASHBOARD */}
           <div className="bg-[#151B28] rounded-[3.5rem] p-10 border border-slate-800/80 shadow-2xl flex flex-col gap-8">
              <div className="flex items-center justify-between mb-2">
                <div className="flex items-center gap-5">
@@ -767,48 +1000,64 @@ ${textureBlocks}
              <div onDragOver={(e) => { e.preventDefault(); setIsDragging(true); }} onDragLeave={() => setIsDragging(false)} onDrop={handleDrop} className={`relative group transition-all duration-300 ${isDragging ? 'scale-[1.01]' : ''}`}>
                <input type="text" placeholder="PASTE CAR FOLDER OR TYPE KN5s HERE..." className={`w-full p-8 bg-[#0B0F19] border-2 rounded-[2.5rem] outline-none font-black text-[18px] tracking-[0.3em] focus:border-cyan-500 transition-all text-white placeholder:text-slate-700 shadow-inner text-center italic ${isDragging ? 'border-cyan-500 bg-cyan-500/5' : 'border-slate-800'}`} value={carFile} onChange={(e) => setCarFile(e.target.value)} />
                <div className="absolute right-8 top-1/2 -translate-y-1/2 text-slate-700 group-focus-within:text-cyan-500"><Car size={40} /></div>
-               {isDragging && <div className="absolute inset-0 bg-cyan-500/10 pointer-events-none rounded-[2.5rem] flex items-center justify-center border-4 border-cyan-500 border-dashed animate-pulse"><p className="text-cyan-400 font-black tracking-[0.5em] text-2xl uppercase italic">Drop Folder Now</p></div>}
              </div>
              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 h-auto md:h-[90px]">
-                <SmartPasteBar label="FRONT RIM" value={frontRimMesh} setter={setFrontRimMesh} colorTheme="cyan" hideHistory={true} />
-                <SmartPasteBar label="REAR RIM" value={rearRimMesh} setter={setRearRimMesh} colorTheme="purple" hideHistory={true} />
+                <SmartPasteBar label="FRONT RIM" value={frontRimMesh} setter={setFrontRimMesh} colorTheme="cyan" />
+                <SmartPasteBar label="REAR RIM" value={rearRimMesh} setter={setRearRimMesh} colorTheme="purple" />
              </div>
              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 h-auto md:h-[90px]">
-                <SmartPasteBar label="FRONT TYRE" value={frontTireMesh} setter={setFrontTireMesh} colorTheme="cyan" hideHistory={true} />
-                <SmartPasteBar label="REAR TYRE" value={rearTireMesh} setter={setRearTireMesh} colorTheme="purple" hideHistory={true} />
+                <SmartPasteBar label="FRONT TYRE" value={frontTireMesh} setter={setFrontTireMesh} colorTheme="cyan" />
+                <SmartPasteBar label="REAR TYRE" value={rearTireMesh} setter={setRearTireMesh} colorTheme="purple" />
              </div>
              <button onClick={handleGenerate} className="w-full flex items-center justify-center gap-6 bg-gradient-to-r from-cyan-600 to-purple-600 hover:from-cyan-500 hover:to-purple-500 text-white py-10 rounded-[2.5rem] font-black text-3xl uppercase tracking-[0.4em] shadow-[0_20px_60px_rgba(34,211,238,0.25)] active:scale-[0.98] transition-all border-b-[8px] border-black/40 group ring-4 ring-transparent hover:ring-cyan-500/30 mt-4">
-                <Zap size={44} className="fill-white group-hover:scale-125 transition-transform" /> Generate Package
+                <Zap size={44} className="fill-white group-hover:scale-125 transition-transform" /> {patronName ? 'COPY CONFIG' : `GENERATE PACKAGE (${getRemainingTrials()} FREE LEFT)`}
              </button>
           </div>
 
-          {/* 4. LIVE STREAM */}
-          <div className="bg-[#151B28] rounded-[3.5rem] p-10 shadow-2xl flex flex-col border border-slate-800/80 h-[600px]">
-            <div className="flex items-center justify-between mb-8 px-2 shrink-0">
-              <div className="flex flex-col gap-2">
-                <div className="flex items-center gap-4 text-cyan-400">
-                   <Layers size={32} />
-                   <h2 className="font-black uppercase text-[20px] tracking-[0.4em] italic text-white">Live Config</h2>
-                </div>
-                <p className="text-[12px] text-slate-500 font-black tracking-widest uppercase">Real-time Stream</p>
-              </div>
-              <button onClick={copyToClipboard} className="px-8 py-4 bg-[#0B0F19] hover:bg-slate-800 rounded-2xl text-slate-400 hover:text-white transition-all flex items-center gap-3 text-[13px] font-black border border-slate-700 active:scale-90 uppercase tracking-widest shadow-xl">
-                 {copySuccess ? <Check size={20} className="text-green-500" /> : <Copy size={20} />} {copySuccess ? 'Copied' : 'Copy All'}
-              </button>
-            </div>
-            
-            <div className="flex-1 overflow-auto bg-[#0B0F19] rounded-[2.5rem] p-10 font-mono text-[13px] leading-relaxed text-slate-400 custom-scrollbar border border-slate-800 shadow-inner whitespace-pre">
-              {iniContent}
-            </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 xl:gap-12 px-2">
+               <OffsetController 
+                 label="Front Axle Position Adjustment"
+                 value={frontOffset} 
+                 base={BASE_OFFSETS.front} 
+                 setter={setFrontOffset} 
+                 colorTheme="cyan" 
+               />
+               <OffsetController 
+                 label="Rear Axle Position Adjustment"
+                 value={rearOffset} 
+                 base={BASE_OFFSETS.rear} 
+                 setter={setRearOffset} 
+                 colorTheme="purple" 
+               />
           </div>
+
+          {/* Live Config - only shown for subscribed users */}
+          {patronName && (
+            <div className="bg-[#151B28] rounded-[3.5rem] p-10 shadow-2xl flex flex-col border border-slate-800/80 h-[600px]">
+              <div className="flex items-center justify-between mb-8 px-2 shrink-0">
+                <div className="flex flex-col gap-2">
+                  <div className="flex items-center gap-4 text-cyan-400">
+                     <Layers size={32} />
+                     <h2 className="font-black uppercase text-[20px] tracking-[0.4em] italic text-white">Live Config</h2>
+                  </div>
+                  <p className="text-[12px] text-slate-500 font-black tracking-widest uppercase">Real-time Stream</p>
+                </div>
+                <button onClick={copyToClipboard} className="px-8 py-4 bg-[#0B0F19] hover:bg-slate-800 rounded-2xl text-slate-400 hover:text-white transition-all flex items-center gap-3 text-[13px] font-black border border-slate-700 active:scale-90 uppercase tracking-widest shadow-xl">
+                   {copySuccess ? <Check size={20} className="text-green-500" /> : <Copy size={20} />} {copySuccess ? 'Copied' : 'Copy All'}
+                </button>
+              </div>
+              
+              <div className="flex-1 overflow-auto bg-[#0B0F19] rounded-[2.5rem] p-10 font-mono text-[13px] leading-relaxed text-slate-400 custom-scrollbar border border-slate-800 shadow-inner whitespace-pre">
+                {iniContent}
+              </div>
+            </div>
+          )}
           
         </div>
-        <footer className="text-center py-12 text-[16px] text-slate-700 font-black uppercase tracking-[0.8em] opacity-40 italic mt-12">RealiSim HQ — Master Configurator v4.3</footer>
+        <footer className="text-center py-12 text-[16px] text-slate-700 font-black uppercase tracking-[0.8em] opacity-40 italic mt-12">Master Configurator v4.5</footer>
       </div>
 
       <style dangerouslySetInnerHTML={{ __html: `
-        @keyframes spin-slow { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
-        .animate-spin-slow { animation: spin-slow 25s linear infinite; }
         .custom-scrollbar::-webkit-scrollbar { width: 12px; }
         .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
         .custom-scrollbar::-webkit-scrollbar-thumb { background: #1e293b; border-radius: 20px; border: 4px solid #0B0F19; }
