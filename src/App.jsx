@@ -364,11 +364,17 @@ export default function App() {
     const clean = (str) => str.trim().replace(/,$/, '').replace(/,\s*$/, '');
     const fOffStr = `${frontOffset.toFixed(3)}, 0.0`;
     const rOffStr = `${rearOffset.toFixed(3)}, 0.0`;
-    const frontTyreWidthInternal = (frontWidth / 1000).toFixed(3);
-    const rearTyreWidthInternal = (rearWidth / 1000).toFixed(3);
-    // Rim width tracks tyre width
-    const frontRimWidthInternal = frontTyreWidthInternal;
-    const rearRimWidthInternal = rearTyreWidthInternal;
+    // Width adjustment: each 5mm step from 215 baseline = ±0.01 internal units
+    const ftBaseRimWidth = parseFloat(ftData.front.rim.split(',')[1]) || 0.178;
+    const ftBaseTyreWidth = parseFloat(ftData.front.tyre.split(',')[1]) || 0.185;
+    const rtBaseRimWidth = parseFloat(rtData.rear.rim.split(',')[1]) || 0.178;
+    const rtBaseTyreWidth = parseFloat(rtData.rear.tyre.split(',')[1]) || 0.185;
+    const frontWidthDelta = ((frontWidth - 215) / 5) * 0.01;
+    const rearWidthDelta = ((rearWidth - 215) / 5) * 0.01;
+    const frontRimWidthInternal = (ftBaseRimWidth + frontWidthDelta).toFixed(3);
+    const frontTyreWidthInternal = (ftBaseTyreWidth + frontWidthDelta).toFixed(3);
+    const rearRimWidthInternal = (rtBaseRimWidth + rearWidthDelta).toFixed(3);
+    const rearTyreWidthInternal = (rtBaseTyreWidth + rearWidthDelta).toFixed(3);
     const textureBlocks = texList.map((tex, idx) => {
       const entryArr = TEXTURE_DATABASE[tex.make];
       const entry = entryArr?.find(m => m.name === tex.model) || entryArr?.[0] || TEXTURE_DATABASE["Valino"][0];
@@ -794,11 +800,6 @@ ${textureBlocks}
             </div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-[1100px] mx-auto">
-            <TireWidthController label="FRONT TIRE WIDTH (MM)" value={frontWidth} setter={setFrontWidth} colorTheme="cyan" min={185} max={265} />
-            <TireWidthController label="REAR TIRE WIDTH (MM)" value={rearWidth} setter={setRearWidth} colorTheme="purple" min={185} max={305} />
-          </div>
-
           <div className="flex flex-col items-center gap-8">
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 gap-8 w-full max-w-[1500px] justify-items-center">
               {texList.map((tex, idx) => (
@@ -854,8 +855,14 @@ ${textureBlocks}
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8 xl:gap-12 px-2">
-            <OffsetController label="Front Wheel Poke Fitment" value={frontOffset} base={BASE_OFFSETS.front} setter={setFrontOffset} colorTheme="cyan" />
-            <OffsetController label="Rear Wheel Poke Fitment" value={rearOffset} base={BASE_OFFSETS.rear} setter={setRearOffset} colorTheme="purple" />
+            <div className="flex flex-col gap-8">
+              <TireWidthController label="FRONT TIRE WIDTH (MM)" value={frontWidth} setter={setFrontWidth} colorTheme="cyan" min={185} max={265} />
+              <OffsetController label="Front Wheel Poke Fitment" value={frontOffset} base={BASE_OFFSETS.front} setter={setFrontOffset} colorTheme="cyan" />
+            </div>
+            <div className="flex flex-col gap-8">
+              <TireWidthController label="REAR TIRE WIDTH (MM)" value={rearWidth} setter={setRearWidth} colorTheme="purple" min={185} max={305} />
+              <OffsetController label="Rear Wheel Poke Fitment" value={rearOffset} base={BASE_OFFSETS.rear} setter={setRearOffset} colorTheme="purple" />
+            </div>
           </div>
 
           {checkPatreonSession() && (
