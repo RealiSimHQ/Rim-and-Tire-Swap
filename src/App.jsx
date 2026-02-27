@@ -1,5 +1,5 @@
-import React, { useState, useMemo, useEffect, useCallback } from 'react';
-import { Download, Car, Disc, Check, Copy, Layers, ClipboardPaste, Search, X, Image as ImageIcon, Trash2, Lock, Zap, Plus, Minus } from 'lucide-react';
+import React, { useState, useMemo, useEffect } from 'react';
+import { Car, Disc, Check, Copy, Layers, ClipboardPaste, Search, X, Image as ImageIcon, Trash2, Lock, Zap, Plus, Minus } from 'lucide-react';
 
 // External script for JSZip
 const JSZIP_URL = "https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js";
@@ -10,11 +10,12 @@ const PATREON_REDIRECT = 'https://realisimhq.github.io/extended-physics-drift-ed
 const PATREON_OAUTH_URL = 'https://www.patreon.com/oauth2/authorize';
 const LOGO_ID = "1OM0G4EM2uSp7voB-CDIbB1Lj86rJD-cb";
 
-// --- CONSTANTS & FORMULAS ---
+// --- CONSTANTS ---
 const INCH_TO_INTERNAL = 0.0250;
 const STEP_INCHES = 0.125;
 const STEP_INTERNAL = STEP_INCHES * INCH_TO_INTERNAL;
 const BASE_OFFSETS = { front: 0.070, rear: -0.055 };
+const MAX_FREE_GENERATIONS = 5;
 
 // --- UI THEME COLORS ---
 const COLORS = {
@@ -139,8 +140,6 @@ function checkPatreonSession() {
   if (auth === 'true' && Date.now() < until) return sessionStorage.getItem('patreon_name') || 'Patron';
   return null;
 }
-function hasUsedTrial() { return localStorage.getItem('rt_config_trial_used') === 'true'; }
-function markTrialUsed() { localStorage.setItem('rt_config_trial_used', 'true'); }
 
 // --- HELPERS ---
 const formatImageUrl = (url) => {
@@ -272,7 +271,34 @@ const SelectionCard = ({ label, make, model, img, set, colorTheme, isTexture, is
   );
 };
 
-// --- MAIN APP ---
+// --- TIRE WIDTH CONTROLLER - EXACT MATCH TO POKE FITMENT STYLE ---
+const TireWidthController = ({ label, value, setter, colorTheme, min, max }) => {
+  const c = COLORS[colorTheme];
+  const [activeAnim, setActiveAnim] = useState(null);
+  const triggerAnim = (type) => { setActiveAnim(type); setTimeout(() => setActiveAnim(null), 400); };
+  const decrease = () => { setter(Math.max(min, value - 5)); triggerAnim('minus'); };
+  const increase = () => { setter(Math.min(max, value + 5)); triggerAnim('plus'); };
+  const borderClass = activeAnim === 'plus' ? 'border-green-500 shadow-[0_0_30px_rgba(34,197,94,0.4)]' : activeAnim === 'minus' ? 'border-yellow-500 shadow-[0_0_30px_rgba(234,179,8,0.4)]' : 'border-slate-800';
+  return (
+    <div className="bg-[#151B28] rounded-[3.5rem] border border-slate-800/80 p-10 flex flex-col items-center shadow-2xl w-full">
+      <h3 className={`text-[13px] font-black uppercase tracking-[0.4em] ${c.textFade} italic mb-8 text-center`}>{label}</h3>
+      <div className="flex items-center justify-center gap-6 w-full">
+        <button onClick={decrease} className="w-20 h-20 bg-[#0B0F19] rounded-[2rem] border-4 border-slate-800 hover:border-yellow-500 transition-all active:scale-90 flex flex-col items-center justify-center group shadow-xl">
+          <Minus size={32} className="text-slate-600 group-hover:text-yellow-500 transition-colors" />
+          <span className="text-[9px] font-black uppercase text-slate-700 group-hover:text-yellow-500/50 mt-1">NARROWER</span>
+        </button>
+        <div className={`flex-1 bg-[#0B0F19] rounded-[2.5rem] border-4 ${borderClass} p-8 transition-all duration-300 flex items-center justify-center shadow-inner relative overflow-hidden h-24`}>
+          <span className={`text-[42px] font-black ${c.text} font-mono tracking-tighter leading-none drop-shadow-[0_0_20px_currentColor]`}>{value} mm</span>
+        </div>
+        <button onClick={increase} className="w-20 h-20 bg-[#0B0F19] rounded-[2rem] border-4 border-slate-800 hover:border-green-500 transition-all active:scale-90 flex flex-col items-center justify-center group shadow-xl">
+          <Plus size={32} className="text-slate-600 group-hover:text-green-500 transition-colors" />
+          <span className="text-[9px] font-black uppercase text-slate-700 group-hover:text-green-500/50 mt-1">WIDER</span>
+        </button>
+      </div>
+      <p className="text-[10px] font-black text-slate-500 tracking-widest mt-6">Visual Only</p>
+    </div>
+  );
+};// --- MAIN APP ---
 export default function App() {
   const [carFile, setCarFile] = useState(() => localStorage.getItem('tp_car') || '');
   const [frontRimMesh, setFrontRimMesh] = useState(() => localStorage.getItem('tp_frm') || '');
@@ -295,9 +321,15 @@ export default function App() {
   const [rearTyre, setRearTyre] = useState('Thicc');
   const [frontOffset, setFrontOffset] = useState(() => parseFloat(localStorage.getItem('tp_f_off')) || BASE_OFFSETS.front);
   const [rearOffset, setRearOffset] = useState(() => parseFloat(localStorage.getItem('tp_r_off')) || BASE_OFFSETS.rear);
+  const [frontWidth, setFrontWidth] = useState(() => parseInt(localStorage.getItem('tp_f_width')) || 215);
+  const [rearWidth, setRearWidth] = useState(() => parseInt(localStorage.getItem('tp_r_width')) || 215);
   const [patronName, setPatronName] = useState(null);
   const [showGate, setShowGate] = useState(false);
   const [isCheckingAuth, setIsCheckingAuth] = useState(true);
+  const [freeGenCount, setFreeGenCount] = useState(() => parseInt(localStorage.getItem('free_gen_count') || '0'));
+  const [showDelayModal, setShowDelayModal] = useState(false);
+  const [delayCountdown, setDelayCountdown] = useState(5);
+  const [goldClicked, setGoldClicked] = useState(false);
 
   useEffect(() => {
     const name = checkPatreonSession();
@@ -314,12 +346,17 @@ export default function App() {
     localStorage.setItem('tp_tex_list', JSON.stringify(texList));
     localStorage.setItem('tp_f_off', frontOffset);
     localStorage.setItem('tp_r_off', rearOffset);
-  }, [carFile, frontRimMesh, rearRimMesh, frontTireMesh, rearTireMesh, texList, frontOffset, rearOffset]);
+    localStorage.setItem('tp_f_width', frontWidth);
+    localStorage.setItem('tp_r_width', rearWidth);
+    localStorage.setItem('free_gen_count', freeGenCount);
+  }, [carFile, frontRimMesh, rearRimMesh, frontTireMesh, rearTireMesh, texList, frontOffset, rearOffset, frontWidth, rearWidth, freeGenCount]);
 
   const currentFrontRim = useMemo(() => RIM_DATABASE[frontMake]?.find(m => m.name === frontModel) || RIM_DATABASE[frontMake]?.[0], [frontMake, frontModel]);
   const currentRearRim = useMemo(() => RIM_DATABASE[rearMake]?.find(m => m.name === rearModel) || RIM_DATABASE[rearMake]?.[0], [rearMake, rearModel]);
   const currentFrontTyre = useMemo(() => TYRE_STYLES[frontTyre], [frontTyre]);
   const currentRearTyre = useMemo(() => TYRE_STYLES[rearTyre], [rearTyre]);
+
+  const remainingFree = MAX_FREE_GENERATIONS - freeGenCount;
 
   const iniContent = useMemo(() => {
     const ftData = TYRE_STYLES[frontTyre];
@@ -327,6 +364,8 @@ export default function App() {
     const clean = (str) => str.trim().replace(/,$/, '').replace(/,\s*$/, '');
     const fOffStr = `${frontOffset.toFixed(3)}, 0.0`;
     const rOffStr = `${rearOffset.toFixed(3)}, 0.0`;
+    const frontTyreWidthInternal = (frontWidth / 1000).toFixed(3);
+    const rearTyreWidthInternal = (rearWidth / 1000).toFixed(3);
     const textureBlocks = texList.map((tex, idx) => {
       const entryArr = TEXTURE_DATABASE[tex.make];
       const entry = entryArr?.find(m => m.name === tex.model) || entryArr?.[0] || TEXTURE_DATABASE["Valino"][0];
@@ -348,7 +387,7 @@ FrontOnly=1
 [ReplaceRims]
 File = ${clean(carFile)}
 OriginalRims = ${clean(frontTireMesh)}
-Model = /../../parts/tyre/${ftData.file}, ${ftData.front.tyre}
+Model = /../../parts/tyre/${ftData.file}, ${ftData.front.tyre.split(',')[0]}, ${frontTyreWidthInternal}
 Offset = ${fOffStr}
 FrontOnly=1
 ; --- REAR SETUP ---
@@ -361,7 +400,7 @@ RearOnly=1
 [ReplaceRims]
 File = ${clean(carFile)}
 OriginalRims = ${clean(rearTireMesh)}
-Model = /../../parts/tyre/${rtData.file}, ${rtData.rear.tyre}
+Model = /../../parts/tyre/${rtData.file}, ${rtData.rear.tyre.split(',')[0]}, ${rearTyreWidthInternal}
 Offset = ${rOffStr}
 RearOnly=1
 ;===================================================================================================================
@@ -388,7 +427,7 @@ SHADER = ksTyresFX
 ${textureBlocks}
 ;===================================================================================================================
 `;
-  }, [carFile, frontRimMesh, rearRimMesh, frontTireMesh, rearTireMesh, frontMake, frontModel, frontTyre, rearMake, rearModel, rearTyre, texList, frontOffset, rearOffset]);
+  }, [carFile, frontRimMesh, rearRimMesh, frontTireMesh, rearTireMesh, frontMake, frontModel, frontTyre, rearMake, rearModel, rearTyre, texList, frontOffset, rearOffset, frontWidth, rearWidth]);
 
   const handleDrop = async (e) => {
     e.preventDefault();
@@ -397,6 +436,8 @@ ${textureBlocks}
     if (!items) return;
     const kn5List = [];
     let targetTyreIni = null;
+    let detectedWidth = 215;
+    let detectedTextures = [];
     for (let i = 0; i < items.length; i++) {
       const entry = items[i].webkitGetAsEntry();
       if (!entry) continue;
@@ -416,18 +457,32 @@ ${textureBlocks}
     if (targetTyreIni) {
       const file = await new Promise(resolve => targetTyreIni.file(resolve));
       const text = await file.text();
-      const compounds = [];
       const blocks = text.split(/\[/);
       blocks.forEach(block => {
         const nameMatch = block.match(/^NAME\s*=\s*([^\r\n]+)/mi);
         const shortMatch = block.match(/^SHORT_NAME\s*=\s*([^\r\n]+)/mi);
+        const widthMatch = block.match(/^WIDTH\s*=\s*([0-9.]+)/mi);
+        if (widthMatch) {
+          const internal = parseFloat(widthMatch[1]);
+          detectedWidth = Math.round(internal * 1000 / 5) * 5;
+          if (detectedWidth < 185) detectedWidth = 185;
+          if (detectedWidth > 305) detectedWidth = 305;
+        }
         if (nameMatch && shortMatch) {
-          compounds.push(JSON.stringify({ name: nameMatch[1].trim().toUpperCase(), shortName: shortMatch[1].trim().toUpperCase() }));
+          detectedTextures.push({
+            name: nameMatch[1].trim().toUpperCase(),
+            shortName: shortMatch[1].trim().toUpperCase()
+          });
         }
       });
-      const uniqueCompounds = [...new Set(compounds)].map(c => JSON.parse(c));
-      if (uniqueCompounds.length > 0) {
-        const newTexList = uniqueCompounds.map(data => ({ make: 'Valino', model: 'Pergea 08R', label: data }));
+      setFrontWidth(detectedWidth);
+      setRearWidth(detectedWidth);
+      if (detectedTextures.length > 0) {
+        const newTexList = detectedTextures.map(data => ({
+          make: 'Valino',
+          model: 'Pergea 08R',
+          label: { name: data.name, shortName: data.shortName }
+        }));
         setTexList(newTexList);
       }
     }
@@ -461,35 +516,62 @@ ${textureBlocks}
     document.body.removeChild(textArea);
   };
 
+  const startFreeGenerationWithDelay = () => {
+    setShowDelayModal(true);
+    setDelayCountdown(5);
+    const countdownInterval = setInterval(() => {
+      setDelayCountdown((prev) => {
+        if (prev <= 1) {
+          clearInterval(countdownInterval);
+          setShowDelayModal(false);
+          performGeneration();
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+  };
+
+  const performGeneration = async () => {
+    setGenStep('generating');
+    setTimeout(async () => {
+      try {
+        if (!window.JSZip) {
+          const script = document.createElement('script');
+          script.src = JSZIP_URL;
+          document.head.appendChild(script);
+          await new Promise(resolve => script.onload = resolve);
+        }
+        const zip = new window.JSZip();
+        const skinFolder = zip.folder("skins/00_RealiSim_HQ");
+        skinFolder.file("ext_config.ini", iniContent);
+        const blob = await zip.generateAsync({ type: "blob" });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement("a");
+        link.href = url;
+        link.download = `skin_${frontModel}_${rearModel}.zip`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+        setGenStep('idle');
+      } catch (e) { setGenStep('idle'); }
+    }, 500);
+  };
+
   const handleGenerate = async () => {
     const patron = checkPatreonSession();
-    if (patron || !hasUsedTrial()) {
-      setGenStep('generating');
-      setTimeout(async () => {
-        try {
-          if (!window.JSZip) {
-            const script = document.createElement('script');
-            script.src = JSZIP_URL;
-            document.head.appendChild(script);
-            await new Promise(resolve => script.onload = resolve);
-          }
-          const zip = new window.JSZip();
-          zip.file("ext_config.ini", iniContent);
-          const blob = await zip.generateAsync({ type: "blob" });
-          const url = URL.createObjectURL(blob);
-          const link = document.createElement("a");
-          link.href = url;
-          link.download = `skin_${frontModel}_${rearModel}.zip`;
-          document.body.appendChild(link);
-          link.click();
-          document.body.removeChild(link);
-          URL.revokeObjectURL(url);
-          if (!patron) markTrialUsed();
-          setGenStep('idle');
-        } catch (e) { setGenStep('idle'); }
-      }, 500);
-    } else {
+    if (patron) {
+      performGeneration();
+    } else if (freeGenCount >= MAX_FREE_GENERATIONS) {
       setShowGate(true);
+    } else {
+      startFreeGenerationWithDelay();
+      setFreeGenCount((prev) => {
+        const newCount = prev + 1;
+        localStorage.setItem('free_gen_count', newCount);
+        return newCount;
+      });
     }
   };
 
@@ -507,6 +589,8 @@ ${textureBlocks}
 
   return (
     <div className="min-h-screen bg-[#0B0F19] text-white font-sans px-6 md:px-12 selection:bg-cyan-500/30 overflow-x-hidden pb-24 relative">
+
+      {/* PATREON BAR */}
       <div className="absolute top-6 right-8 z-40">
         {isCheckingAuth ? (
           <span className="text-slate-500 text-xs font-black uppercase tracking-widest animate-pulse">Checking Patreon...</span>
@@ -522,6 +606,7 @@ ${textureBlocks}
         )}
       </div>
 
+      {/* GENERATING MODAL */}
       {genStep === 'generating' && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/90 backdrop-blur-2xl animate-in fade-in duration-300">
           <div className="w-full max-w-lg bg-[#151B28] border border-slate-800 rounded-[3.5rem] shadow-2xl p-14 text-center space-y-8 relative overflow-hidden">
@@ -533,21 +618,37 @@ ${textureBlocks}
                 <Zap className="text-cyan-400 fill-cyan-400 animate-pulse" size={36} />
               </div>
               <h3 className="text-2xl font-black tracking-tight mb-2 uppercase italic text-center text-white">Generating pack...</h3>
-              <p className="text-slate-400 text-[10px] tracking-[0.2em] uppercase font-black italic">HQ Rim and Tyre</p>
+              <p className="text-slate-400 text-[10px] tracking-[0.2em] uppercase font-black italic">RealiSim HQ Rim and Tyre</p>
+              {checkPatreonSession() && <div className="text-green-400 text-sm font-black italic mt-4">Thank you for your support! ❤️</div>}
             </div>
             <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-transparent via-cyan-500 to-transparent opacity-50"></div>
           </div>
         </div>
       )}
 
+      {/* DELAY MODAL */}
+      {showDelayModal && (
+        <div className="fixed inset-0 z-[101] flex items-center justify-center p-4 bg-black/95 backdrop-blur-2xl animate-in fade-in duration-300">
+          <div className="w-full max-w-md bg-[#151B28] border border-slate-800 rounded-[3.5rem] shadow-2xl p-14 text-center space-y-8 relative overflow-hidden">
+            <img src={formatImageUrl(`id=${LOGO_ID}`)} alt="Logo" className="h-24 mx-auto mb-6 animate-[spin_3s_linear_infinite]" />
+            <h3 className="text-3xl font-black tracking-tighter uppercase italic text-white">Free Generation</h3>
+            <p className="text-slate-400 text-lg font-medium">Please wait {delayCountdown} seconds...</p>
+            <div className="text-xs text-slate-500 italic">Support RealiSim HQ on Patreon for unlimited generations</div>
+            <button onClick={patreonLogin} className="mt-6 text-cyan-400 hover:text-white text-sm underline">Join Patreon Now</button>
+            <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-transparent via-cyan-500 to-transparent opacity-50"></div>
+          </div>
+        </div>
+      )}
+
+      {/* GATE MODAL */}
       {showGate && (
         <div className="fixed inset-0 z-[101] flex items-center justify-center p-4 bg-black/95 backdrop-blur-2xl animate-in fade-in duration-300">
           <div className="w-full max-w-md bg-[#151B28] border border-slate-800 rounded-[3.5rem] shadow-2xl p-12 text-center space-y-8 relative">
             <div className="w-20 h-20 bg-amber-500/10 rounded-3xl flex items-center justify-center mx-auto text-amber-500 border border-amber-500/20"><Lock size={40} /></div>
             <h3 className="text-3xl font-black uppercase italic text-white tracking-tighter">Free Trial Used</h3>
             <div className="space-y-2">
-              <p className="text-slate-400 text-sm leading-relaxed font-medium">You've used your one free generation.</p>
-              <p className="text-slate-400 text-sm leading-relaxed font-medium">Subscribe to the $10 tier for unlimited access.</p>
+              <p className="text-slate-400 text-sm leading-relaxed font-medium">You've used all 5 free generations.</p>
+              <p className="text-slate-400 text-sm leading-relaxed font-medium">Subscribe for unlimited access.</p>
             </div>
             <div className="pt-4 flex flex-col gap-4">
               <a href="https://www.patreon.com/membership/26118508" target="_blank" className="w-full py-6 bg-[#FF424D] hover:bg-[#E33B44] text-white rounded-2xl font-black text-sm uppercase tracking-widest transition-all shadow-xl block text-center">Subscribe Now – $10/month</a>
@@ -558,7 +659,7 @@ ${textureBlocks}
         </div>
       )}
 
-      {/* FIXED PICKER MODAL - NOW CORRECTLY SHOWS TYRE PROFILES */}
+      {/* PICKER MODAL */}
       {pickerOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/95 backdrop-blur-md animate-in fade-in duration-200">
           <div className="bg-[#151B28] w-full max-w-[1450px] max-h-[85vh] rounded-[4rem] shadow-2xl overflow-hidden flex flex-col border border-slate-800">
@@ -639,11 +740,16 @@ ${textureBlocks}
       )}
 
       <div className="max-w-[1900px] mx-auto pt-10 pb-12 h-full flex flex-col">
-        <header className="flex flex-col items-center justify-center space-y-4 pb-10">
-          <img src={formatImageUrl(`id=${LOGO_ID}`)} alt="Logo" className="h-32 md:h-40 drop-shadow-[0_0_35px_rgba(34,211,238,0.6)]" />
-          <h1 className="text-5xl md:text-[4.5rem] font-black tracking-tighter uppercase italic leading-none text-center text-white">
-            <span className="bg-gradient-to-r from-white to-purple-400 bg-clip-text text-transparent">Rim and Tyre</span>
-          </h1>
+        <header className="flex flex-col items-center justify-center space-y-3 pb-10">
+          <a href="https://www.patreon.com/c/u80119694" target="_blank" className="group transition-all duration-300 hover:scale-110 hover:drop-shadow-[0_0_40px_rgba(34,211,238,0.8)]">
+            <img src={formatImageUrl(`id=${LOGO_ID}`)} alt="RealiSim HQ" className="h-32 md:h-40 drop-shadow-[0_0_35px_rgba(34,211,238,0.6)]" />
+          </a>
+          <div className="flex flex-col items-center">
+            <h1 className="text-5xl md:text-[4.5rem] font-black tracking-[-0.015em] uppercase italic leading-none text-center text-white">
+              RIM and TYRE
+            </h1>
+            <p className="text-[13px] font-black uppercase tracking-[0.25em] text-slate-500 italic mt-1">*Defaults for 0.3150 Tire RADIUS*</p>
+          </div>
         </header>
 
         <div className="flex flex-col gap-12">
@@ -656,6 +762,12 @@ ${textureBlocks}
               <SelectionCard label="Rear Rim" make={rearMake} model={rearModel} img={currentRearRim.img} set={() => setPickerOpen('rear-rim')} colorTheme="purple" isRim={true} />
               <SelectionCard label="Rear Profiling" make="" model={currentRearTyre.name} img={currentRearTyre.img} set={() => setPickerOpen('rear-tyre-profile')} colorTheme="purple" isProfiling={true} />
             </div>
+          </div>
+
+          {/* TIRE WIDTH BOXES - EXACT MATCH TO YOUR POKE FITMENT CARDS */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-[1100px] mx-auto">
+            <TireWidthController label="FRONT TIRE WIDTH (MM)" value={frontWidth} setter={setFrontWidth} colorTheme="cyan" min={185} max={265} />
+            <TireWidthController label="REAR TIRE WIDTH (MM)" value={rearWidth} setter={setRearWidth} colorTheme="purple" min={185} max={305} />
           </div>
 
           <div className="flex flex-col items-center gap-8">
@@ -693,33 +805,51 @@ ${textureBlocks}
               <SmartPasteBar label="FRONT TYRE" value={frontTireMesh} setter={setFrontTireMesh} colorTheme="cyan" />
               <SmartPasteBar label="REAR TYRE" value={rearTireMesh} setter={setRearTireMesh} colorTheme="purple" />
             </div>
-            <button onClick={handleGenerate} className="w-full flex items-center justify-center gap-6 bg-gradient-to-r from-cyan-600 to-purple-600 hover:from-cyan-500 hover:to-purple-500 text-white py-10 rounded-[2.5rem] font-black text-3xl uppercase tracking-[0.4em] shadow-[0_20px_60px_rgba(34,211,238,0.25)] active:scale-[0.98] transition-all border-b-[8px] border-black/40 group ring-4 ring-transparent hover:ring-cyan-500/30 mt-4">
-              <Zap size={44} className="fill-white group-hover:scale-125 transition-transform" /> Generate Package
+
+            {/* GOLDEN MANDATORY LINK - FIXED PULSE/GLOW */}
+            <div className="flex justify-center mb-4">
+              <a 
+                href="https://drive.google.com/file/d/1qHmA_JnPEBs9f5F4ykNXUT4DOoBy2qGQ/view?usp=drive_link" 
+                target="_blank"
+                onClick={() => setGoldClicked(true)}
+                className={`group flex items-center gap-4 px-12 py-5 rounded-3xl font-black text-[18px] uppercase tracking-widest shadow-2xl transition-all active:scale-95 border border-amber-300/50 ring-1 ring-amber-400/30 overflow-hidden relative ${goldClicked ? 'bg-slate-700 text-slate-400 scale-95' : 'bg-gradient-to-r from-amber-400 via-yellow-400 to-amber-500 hover:from-amber-500 hover:via-yellow-500 hover:to-amber-400 hover:scale-125 animate-[goldPulse_1.8s_ease-in-out_infinite]'}`}
+              >
+                <img src={formatImageUrl(`id=${LOGO_ID}`)} alt="RealiSim HQ" className="h-10 group-hover:scale-110 transition-transform" />
+                Mandatory RealiSim HQ Rims, Tires & Parts
+              </a>
+            </div>
+
+            {/* GENERATE BUTTON */}
+            <button onClick={handleGenerate} className="w-full flex items-center justify-center gap-6 bg-gradient-to-r from-cyan-600 to-purple-600 hover:from-cyan-500 hover:to-purple-500 text-white py-10 rounded-[2.5rem] font-black text-3xl uppercase tracking-[0.4em] shadow-[0_20px_60px_rgba(34,211,238,0.25)] active:scale-[0.98] transition-all border-b-[8px] border-black/40 group ring-4 ring-transparent hover:ring-cyan-500/30">
+              <Zap size={44} className="fill-white group-hover:scale-125 transition-transform" /> 
+              {checkPatreonSession() ? "GENERATE PACKAGE" : `${remainingFree} Free Generations Remaining`}
             </button>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8 xl:gap-12 px-2">
-            <OffsetController label="Front Axle Position Adjustment" value={frontOffset} base={BASE_OFFSETS.front} setter={setFrontOffset} colorTheme="cyan" />
-            <OffsetController label="Rear Axle Position Adjustment" value={rearOffset} base={BASE_OFFSETS.rear} setter={setRearOffset} colorTheme="purple" />
+            <OffsetController label="Front Wheel Poke Fitment" value={frontOffset} base={BASE_OFFSETS.front} setter={setFrontOffset} colorTheme="cyan" />
+            <OffsetController label="Rear Wheel Poke Fitment" value={rearOffset} base={BASE_OFFSETS.rear} setter={setRearOffset} colorTheme="purple" />
           </div>
 
-          <div className="bg-[#151B28] rounded-[3.5rem] p-10 shadow-2xl flex flex-col border border-slate-800/80 h-[600px]">
-            <div className="flex items-center justify-between mb-8 px-2 shrink-0">
-              <div className="flex flex-col gap-2">
-                <div className="flex items-center gap-4 text-cyan-400">
-                  <Layers size={32} />
-                  <h2 className="font-black uppercase text-[20px] tracking-[0.4em] italic text-white">Live Config</h2>
+          {checkPatreonSession() && (
+            <div className="bg-[#151B28] rounded-[3.5rem] p-10 shadow-2xl flex flex-col border border-slate-800/80 h-[600px]">
+              <div className="flex items-center justify-between mb-8 px-2 shrink-0">
+                <div className="flex flex-col gap-2">
+                  <div className="flex items-center gap-4 text-cyan-400">
+                    <Layers size={32} />
+                    <h2 className="font-black uppercase text-[20px] tracking-[0.4em] italic text-white">Live Config</h2>
+                  </div>
+                  <p className="text-[12px] text-slate-500 font-black tracking-widest uppercase">Real-time Stream</p>
                 </div>
-                <p className="text-[12px] text-slate-500 font-black tracking-widest uppercase">Real-time Stream</p>
+                <button onClick={copyToClipboard} className="px-8 py-4 bg-[#0B0F19] hover:bg-slate-800 rounded-2xl text-slate-400 hover:text-white transition-all flex items-center gap-3 text-[13px] font-black border border-slate-700 active:scale-90 uppercase tracking-widest shadow-xl">
+                  {copySuccess ? <Check size={20} className="text-green-500" /> : <Copy size={20} />} {copySuccess ? 'Copied' : 'Copy All'}
+                </button>
               </div>
-              <button onClick={copyToClipboard} className="px-8 py-4 bg-[#0B0F19] hover:bg-slate-800 rounded-2xl text-slate-400 hover:text-white transition-all flex items-center gap-3 text-[13px] font-black border border-slate-700 active:scale-90 uppercase tracking-widest shadow-xl">
-                {copySuccess ? <Check size={20} className="text-green-500" /> : <Copy size={20} />} {copySuccess ? 'Copied' : 'Copy All'}
-              </button>
+              <div className="flex-1 overflow-auto bg-[#0B0F19] rounded-[2.5rem] p-10 font-mono text-[13px] leading-relaxed text-slate-400 custom-scrollbar border border-slate-800 shadow-inner whitespace-pre">
+                {iniContent}
+              </div>
             </div>
-            <div className="flex-1 overflow-auto bg-[#0B0F19] rounded-[2.5rem] p-10 font-mono text-[13px] leading-relaxed text-slate-400 custom-scrollbar border border-slate-800 shadow-inner whitespace-pre">
-              {iniContent}
-            </div>
-          </div>
+          )}
         </div>
         <footer className="text-center py-12 text-[16px] text-slate-700 font-black uppercase tracking-[0.8em] opacity-40 italic mt-12">Master Configurator v4.8</footer>
       </div>
@@ -728,6 +858,10 @@ ${textureBlocks}
         .custom-scrollbar::-webkit-scrollbar { width: 12px; }
         .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
         .custom-scrollbar::-webkit-scrollbar-thumb { background: #1e293b; border-radius: 20px; border: 4px solid #0B0F19; }
+        @keyframes goldPulse {
+          0%, 100% { box-shadow: 0 0 25px #fbbf24, 0 0 50px #a855f7; }
+          50% { box-shadow: 0 0 50px #fbbf24, 0 0 80px #a855f7; }
+        }
       `}} />
     </div>
   );
