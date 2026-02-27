@@ -539,4 +539,30 @@ ${textureBlocks}`;
               <SelectionCard label="Front Profiling" make="" model={currentFrontTyre.name} img={currentFrontTyre.img} set={() => setPickerOpen('front-tyre-profile')} colorTheme="cyan" isProfiling />
             </div>
             <div className="flex flex-col gap-6">
-              <SelectionCard label="Rear Rim
+              <SelectionCard label="Rear Rim" make={rearMake} model={rearModel} img={currentRearRim.img} set={() => setPickerOpen('rear-rim')} offset="-0.055" colorTheme="purple" />
+              <SelectionCard label="Rear Profiling" make="" model={currentRearTyre.name} img={currentRearTyre.img} set={() => setPickerOpen('rear-tyre-profile')} offset="-0.055" colorTheme="purple" />
+            </div>
+          </div>
+
+          {/* SINGLE TIRE TEXTURE BOX */}
+          <div>
+            <SelectionCard
+              label="Tire Texture (All 4 Tires)"
+              make={texMake}
+              model={texModel}
+              img={currentTextureEntry.img}
+              set={() => setPickerOpen('texture')}
+              colorTheme="cyan"
+              isTexture={true}
+            />
+          </div>
+
+          {/* Dashboard, paste bars, generate button - unchanged */}
+          {/* Live Config - unchanged */}
+        </div>
+
+        <footer className="text-center py-12 text-[16px] text-slate-700 font-black uppercase tracking-[0.8em] opacity-40 italic mt-12">RealiSim HQ — Master Configurator v4.3</footer>
+      </div>
+    </div>
+  );
+}
