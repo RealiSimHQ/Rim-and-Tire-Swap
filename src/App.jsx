@@ -446,7 +446,7 @@ export default function App() {
     const rtData = TYRE_STYLES[rearTyre];
     const clean = (str) => str.trim().replace(/,$/, '').replace(/,\s*$/, '');
     const fOffStr = `${frontOffset.toFixed(3)}, 0.0`;
-    const rOffStr = `${rearOffset.toFixed(3)}, 0.0`;
+    const rOffStr = `0.0, ${rearOffset.toFixed(3)}`;
     // Width adjustment: each 5mm step from 215 baseline = ±0.01 internal units
     const ftBaseRimWidth = parseFloat(ftData.front.rim.split(',')[1]) || 0.178;
     const ftBaseTyreWidth = parseFloat(ftData.front.tyre.split(',')[1]) || 0.185;
