@@ -271,7 +271,6 @@ const SelectionCard = ({ label, make, model, img, set, colorTheme, isTexture, is
   );
 };
 
-// --- TIRE WIDTH CONTROLLER - EXACT MATCH TO POKE FITMENT STYLE ---
 const TireWidthController = ({ label, value, setter, colorTheme, min, max }) => {
   const c = COLORS[colorTheme];
   const [activeAnim, setActiveAnim] = useState(null);
@@ -434,10 +433,10 @@ ${textureBlocks}
     setIsDragging(false);
     const items = e.dataTransfer.items;
     if (!items) return;
+
     const kn5List = [];
     let targetTyreIni = null;
-    let detectedWidth = 215;
-    let detectedTextures = [];
+
     for (let i = 0; i < items.length; i++) {
       const entry = items[i].webkitGetAsEntry();
       if (!entry) continue;
@@ -453,35 +452,51 @@ ${textureBlocks}
       await collectKN5s(entry);
       if (!targetTyreIni) targetTyreIni = await findTyreIni(entry);
     }
+
     if (kn5List.length > 0) setCarFile(kn5List.join(', '));
+
     if (targetTyreIni) {
       const file = await new Promise(resolve => targetTyreIni.file(resolve));
       const text = await file.text();
       const blocks = text.split(/\[/);
+
+      const uniqueTextures = new Map();
+      const widths = [];
+
       blocks.forEach(block => {
         const nameMatch = block.match(/^NAME\s*=\s*([^\r\n]+)/mi);
         const shortMatch = block.match(/^SHORT_NAME\s*=\s*([^\r\n]+)/mi);
         const widthMatch = block.match(/^WIDTH\s*=\s*([0-9.]+)/mi);
+
         if (widthMatch) {
           const internal = parseFloat(widthMatch[1]);
-          detectedWidth = Math.round(internal * 1000 / 5) * 5;
-          if (detectedWidth < 185) detectedWidth = 185;
-          if (detectedWidth > 305) detectedWidth = 305;
+          let w = Math.round(internal * 1000 / 5) * 5;
+          if (w < 185) w = 185;
+          if (w > 305) w = 305;
+          widths.push(w);
         }
+
         if (nameMatch && shortMatch) {
-          detectedTextures.push({
-            name: nameMatch[1].trim().toUpperCase(),
-            shortName: shortMatch[1].trim().toUpperCase()
-          });
+          const short = shortMatch[1].trim().toUpperCase();
+          if (!uniqueTextures.has(short)) {
+            uniqueTextures.set(short, {
+              name: nameMatch[1].trim().toUpperCase(),
+              shortName: short
+            });
+          }
         }
       });
-      setFrontWidth(detectedWidth);
-      setRearWidth(detectedWidth);
-      if (detectedTextures.length > 0) {
-        const newTexList = detectedTextures.map(data => ({
+
+      if (widths.length > 0) {
+        setFrontWidth(widths[0]);
+        setRearWidth(widths[1] !== undefined ? widths[1] : widths[0]);
+      }
+
+      if (uniqueTextures.size > 0) {
+        const newTexList = Array.from(uniqueTextures.values()).map(data => ({
           make: 'Valino',
           model: 'Pergea 08R',
-          label: { name: data.name, shortName: data.shortName }
+          label: data
         }));
         setTexList(newTexList);
       }
@@ -764,7 +779,6 @@ ${textureBlocks}
             </div>
           </div>
 
-          {/* TIRE WIDTH BOXES - EXACT MATCH TO YOUR POKE FITMENT CARDS */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-[1100px] mx-auto">
             <TireWidthController label="FRONT TIRE WIDTH (MM)" value={frontWidth} setter={setFrontWidth} colorTheme="cyan" min={185} max={265} />
             <TireWidthController label="REAR TIRE WIDTH (MM)" value={rearWidth} setter={setRearWidth} colorTheme="purple" min={185} max={305} />
@@ -806,7 +820,6 @@ ${textureBlocks}
               <SmartPasteBar label="REAR TYRE" value={rearTireMesh} setter={setRearTireMesh} colorTheme="purple" />
             </div>
 
-            {/* GOLDEN MANDATORY LINK - FIXED PULSE/GLOW */}
             <div className="flex justify-center mb-4">
               <a 
                 href="https://drive.google.com/file/d/1qHmA_JnPEBs9f5F4ykNXUT4DOoBy2qGQ/view?usp=drive_link" 
@@ -819,7 +832,6 @@ ${textureBlocks}
               </a>
             </div>
 
-            {/* GENERATE BUTTON */}
             <button onClick={handleGenerate} className="w-full flex items-center justify-center gap-6 bg-gradient-to-r from-cyan-600 to-purple-600 hover:from-cyan-500 hover:to-purple-500 text-white py-10 rounded-[2.5rem] font-black text-3xl uppercase tracking-[0.4em] shadow-[0_20px_60px_rgba(34,211,238,0.25)] active:scale-[0.98] transition-all border-b-[8px] border-black/40 group ring-4 ring-transparent hover:ring-cyan-500/30">
               <Zap size={44} className="fill-white group-hover:scale-125 transition-transform" /> 
               {checkPatreonSession() ? "GENERATE PACKAGE" : `${remainingFree} Free Generations Remaining`}
