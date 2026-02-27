@@ -20,63 +20,7 @@ const BASE_OFFSETS = {
   rear: -0.055
 };
 
-// --- PATREON HELPERS ---
-function patreonLogin() {
-    const url = `${PATREON_OAUTH_URL}?response_type=code&client_id=${PATREON_CLIENT_ID}&redirect_uri=${encodeURIComponent(PATREON_REDIRECT)}&scope=identity%20identity%5Bemail%5D%20identity.memberships`;
-    window.location.href = url;
-}
-
-function checkPatreonSession() {
-    const auth = sessionStorage.getItem('patreon_authorized');
-    const until = parseInt(sessionStorage.getItem('patreon_until') || '0');
-    if (auth === 'true' && Date.now() < until) {
-        return sessionStorage.getItem('patreon_name') || 'Patron';
-    }
-    return null;
-}
-
-function hasUsedTrial() {
-    return localStorage.getItem('rt_config_trial_used') === 'true';
-}
-
-function markTrialUsed() {
-    localStorage.setItem('rt_config_trial_used', 'true');
-}
-
-// --- GENERAL HELPERS ---
-const formatImageUrl = (url) => {
-  if (!url) return "";
-  const driveMatch = url.match(/\/(?:file\/d\/|open\?id=)([a-zA-Z0-9_-]+)/) || url.match(/id=([a-zA-Z0-9_-]+)/);
-  if (driveMatch && driveMatch[1]) {
-    return `https://drive.google.com/thumbnail?id=${driveMatch[1]}&sz=w1000`;
-  }
-  return url;
-};
-
-const getFraction = (val) => {
-  const absVal = Math.abs(val);
-  const sign = val < -0.0001 ? "-" : "";
-  const whole = Math.floor(absVal + 0.0001);
-  const remainder = absVal - whole;
-
-  const eighths = Math.round(remainder * 8);
-  
-  let fracPart = "";
-  if (eighths === 1) fracPart = "1/8";
-  else if (eighths === 2) fracPart = "1/4";
-  else if (eighths === 3) fracPart = "3/8";
-  else if (eighths === 4) fracPart = "1/2";
-  else if (eighths === 5) fracPart = "5/8";
-  else if (eighths === 6) fracPart = "3/4";
-  else if (eighths === 7) fracPart = "7/8";
-  else if (eighths === 8) return `${sign}${whole + 1}"`;
-
-  if (eighths === 0) return whole === 0 ? `0"` : `${sign}${whole}"`;
-  if (whole === 0) return `${sign}${fracPart}"`;
-  return `${sign}${whole} ${fracPart}"`;
-};
-
-// --- TAILWIND COLOR MAP ---
+// --- UI THEME COLORS ---
 const COLORS = {
   cyan: {
     text: "text-cyan-400",
@@ -159,23 +103,6 @@ const TEXTURE_DATABASE = {
   "Valino": [{ name: "Pergea 08R", key: "Valino_Pergea", img: "id=1UFWu3Ob-_-Mc4Z1ynrOAfqDep6kctotJ" }]
 };
 
-const TEXTURE_CONFIGS = {
-  Accelera_651: { folder: "Accelera_651", diffuse: "tyre.dds", blur: "tyre_blur.dds", normal: "tyre_NM.dds", normalBlur: "tyre_blur_NM.dds" },
-  ADL: { folder: "ADL", diffuse: "tyre.dds", blur: "tyre.dds", normal: "tyre_NM.dds", normalBlur: "tyre_NM.dds" },
-  Armstrong_BluTracHP: { folder: "Armstrong_BluTracHP", diffuse: "tyre.dds", blur: "tyre.dds", normal: "tyre_NM.dds", normalBlur: "tyre_NM.dds", dirt: "tyre_dirt.dds" },
-  Falken_Azenis: { folder: "Falken_Azenis", diffuse: "tyre.dds", blur: "tyre.dds", normal: "tyre_NM.dds", normalBlur: "tyre_NM.dds" },
-  Federal_595RS: { folder: "Federal_595RS", diffuse: "tyre.dds", blur: "tyre.dds", normal: "tyre_NM.dds", normalBlur: "tyre_NM.dds" },
-  Federal_595RS_white_letter_tyre1: { folder: "Federal_595RS_white_letter", diffuse: "tyre1.dds", blur: "tyre1.dds", normal: "tyre1_NM.dds", normalBlur: "tyre1_NM.dds" },
-  Federal_595RS_white_letter_tyre2: { folder: "Federal_595RS_white_letter", diffuse: "tyre2.dds", blur: "tyre2.dds", normal: "tyre2_NM.dds", normalBlur: "tyre2_NM.dds" },
-  Ice_Tyre: { folder: "Ice_Tyre", diffuse: "tyre.dds", blur: "tyre.dds", normal: "tyre_NM.dds", normalBlur: "tyre_NM.dds" },
-  KendaKR20A: { folder: "KendaKR20A", diffuse: "tyre.dds", blur: "tyre.dds", normal: "tyre_NM.dds", normalBlur: "tyre_NM.dds" },
-  Kumho: { folder: "Kumho", diffuse: "tyre.dds", blur: "tyre.dds", normal: "tyre_NM.dds", normalBlur: "tyre_NM.dds" },
-  Nitto: { folder: "Nitto", diffuse: "tyre.dds", blur: "tyre.dds", normal: "tyre_NM.dds", normalBlur: "tyre_NM.dds" },
-  Toyo_Proxies_prox: { folder: "Toyo_Proxies", diffuse: "Tire_Toyo_prox.dds", blur: "Tire_Toyo_prox.dds", normal: "Tire_Toyo_prox_nm.dds", normalBlur: "Tire_Toyo_prox_nm.dds" },
-  Toyo_Proxies: { folder: "Toyo_Proxies", diffuse: "tyre.dds", blur: "tyre.dds", normal: "tyre_nm.dds", normalBlur: "tyre_nm.dds", dirt: "tyre_dirt.dds" },
-  Valino_Pergea: { folder: "Valino_Pergea", diffuse: "tyre.dds", blur: "tyre.dds", normal: "tyre_NM.dds", normalBlur: "tyre_NM.dds" }
-};
-
 const RIM_DATABASE = {
   "Campagnolo": [{ name: "00", img: "https://i.imgur.com/fbuG4uF.jpeg" }],
   "59North": [{ name: "d003", img: "https://i.imgur.com/MoT3l7d.jpeg" }],
@@ -256,6 +183,79 @@ const RIM_DATABASE = {
 const TEXTURE_MAKES = Object.keys(TEXTURE_DATABASE).sort();
 const RIM_MAKES = Object.keys(RIM_DATABASE).sort();
 
+const TEXTURE_CONFIGS = {
+  Accelera_651: { folder: "Accelera_651", diffuse: "tyre.dds", blur: "tyre_blur.dds", normal: "tyre_NM.dds", normalBlur: "tyre_blur_NM.dds" },
+  ADL: { folder: "ADL", diffuse: "tyre.dds", blur: "tyre.dds", normal: "tyre_NM.dds", normalBlur: "tyre_NM.dds" },
+  Armstrong_BluTracHP: { folder: "Armstrong_BluTracHP", diffuse: "tyre.dds", blur: "tyre.dds", normal: "tyre_NM.dds", normalBlur: "tyre_NM.dds", dirt: "tyre_dirt.dds" },
+  Falken_Azenis: { folder: "Falken_Azenis", diffuse: "tyre.dds", blur: "tyre.dds", normal: "tyre_NM.dds", normalBlur: "tyre_NM.dds" },
+  Federal_595RS: { folder: "Federal_595RS", diffuse: "tyre.dds", blur: "tyre.dds", normal: "tyre_NM.dds", normalBlur: "tyre_NM.dds" },
+  Federal_595RS_white_letter_tyre1: { folder: "Federal_595RS_white_letter", diffuse: "tyre1.dds", blur: "tyre1.dds", normal: "tyre1_NM.dds", normalBlur: "tyre1_NM.dds" },
+  Federal_595RS_white_letter_tyre2: { folder: "Federal_595RS_white_letter", diffuse: "tyre2.dds", blur: "tyre2.dds", normal: "tyre2_NM.dds", normalBlur: "tyre2_NM.dds" },
+  Ice_Tyre: { folder: "Ice_Tyre", diffuse: "tyre.dds", blur: "tyre.dds", normal: "tyre_NM.dds", normalBlur: "tyre_NM.dds" },
+  KendaKR20A: { folder: "KendaKR20A", diffuse: "tyre.dds", blur: "tyre.dds", normal: "tyre_NM.dds", normalBlur: "tyre_NM.dds" },
+  Kumho: { folder: "Kumho", diffuse: "tyre.dds", blur: "tyre.dds", normal: "tyre_NM.dds", normalBlur: "tyre_NM.dds" },
+  Nitto: { folder: "Nitto", diffuse: "tyre.dds", blur: "tyre.dds", normal: "tyre_NM.dds", normalBlur: "tyre_NM.dds" },
+  Toyo_Proxies_prox: { folder: "Toyo_Proxies", diffuse: "Tire_Toyo_prox.dds", blur: "Tire_Toyo_prox.dds", normal: "Tire_Toyo_prox_nm.dds", normalBlur: "Tire_Toyo_prox_nm.dds" },
+  Toyo_Proxies: { folder: "Toyo_Proxies", diffuse: "tyre.dds", blur: "tyre.dds", normal: "tyre_nm.dds", normalBlur: "tyre_nm.dds", dirt: "tyre_dirt.dds" },
+  Valino_Pergea: { folder: "Valino_Pergea", diffuse: "tyre.dds", blur: "tyre.dds", normal: "tyre_NM.dds", normalBlur: "tyre_NM.dds" }
+};
+
+// --- PATREON HELPERS ---
+function patreonLogin() {
+    const url = `${PATREON_OAUTH_URL}?response_type=code&client_id=${PATREON_CLIENT_ID}&redirect_uri=${encodeURIComponent(PATREON_REDIRECT)}&scope=identity%20identity%5Bemail%5D%20identity.memberships`;
+    window.location.href = url;
+}
+
+function checkPatreonSession() {
+    const auth = sessionStorage.getItem('patreon_authorized');
+    const until = parseInt(sessionStorage.getItem('patreon_until') || '0');
+    if (auth === 'true' && Date.now() < until) {
+        return sessionStorage.getItem('patreon_name') || 'Patron';
+    }
+    return null;
+}
+
+function hasUsedTrial() {
+    return localStorage.getItem('rt_config_trial_used') === 'true';
+}
+
+function markTrialUsed() {
+    localStorage.setItem('rt_config_trial_used', 'true');
+}
+
+// --- GENERAL HELPERS ---
+const formatImageUrl = (url) => {
+  if (!url) return "";
+  const driveMatch = url.match(/\/(?:file\/d\/|open\?id=)([a-zA-Z0-9_-]+)/) || url.match(/id=([a-zA-Z0-9_-]+)/);
+  if (driveMatch && driveMatch[1]) {
+    return `https://drive.google.com/thumbnail?id=${driveMatch[1]}&sz=w1000`;
+  }
+  return url;
+};
+
+const getFraction = (val) => {
+  const absVal = Math.abs(val);
+  const sign = val < -0.0001 ? "-" : "";
+  const whole = Math.floor(absVal + 0.0001);
+  const remainder = absVal - whole;
+
+  const eighths = Math.round(remainder * 8);
+  
+  let fracPart = "";
+  if (eighths === 1) fracPart = "1/8";
+  else if (eighths === 2) fracPart = "1/4";
+  else if (eighths === 3) fracPart = "3/8";
+  else if (eighths === 4) fracPart = "1/2";
+  else if (eighths === 5) fracPart = "5/8";
+  else if (eighths === 6) fracPart = "3/4";
+  else if (eighths === 7) fracPart = "7/8";
+  else if (eighths === 8) return `${sign}${whole + 1}"`;
+
+  if (eighths === 0) return whole === 0 ? `0"` : `${sign}${whole}"`;
+  if (whole === 0) return `${sign}${fracPart}"`;
+  return `${sign}${whole} ${fracPart}"`;
+};
+
 const getTextureINI = (key, index) => {
   const cfg = TEXTURE_CONFIGS[key] || TEXTURE_CONFIGS.Valino_Pergea;
   const base = `/../../parts/tyre/${cfg.folder}/`;
@@ -300,7 +300,7 @@ const OffsetController = ({ label, value, base, setter, colorTheme }) => {
 
   return (
     <div className="w-full bg-[#151B28] rounded-[3.5rem] border border-slate-800/80 p-8 flex flex-col items-center gap-6 shadow-2xl relative">
-      <h3 className={`text-[13px] font-black uppercase tracking-[0.4em] ${c.textFade} italic mb-2`}>{label}</h3>
+      <h3 className={`text-[13px] font-black uppercase tracking-[0.4em] ${c.textFade} italic mb-2 text-center`}>{label}</h3>
       
       <div className="flex items-center justify-between w-full gap-6">
         <button 
@@ -403,25 +403,25 @@ const SelectionCard = ({ label, make, model, img, set, colorTheme, isTexture, is
   const renderHeader = () => {
     if (typeof label === 'object' && label !== null) {
       return (
-        <div className="flex flex-col items-center justify-center w-full text-center gap-0.5 py-1">
-          <p className="text-[12px] font-black uppercase text-slate-500 tracking-wider whitespace-normal leading-tight px-2">
-            Name={label.name}
+        <div className="flex flex-col items-center justify-center w-full text-center gap-0.5 py-1 min-h-[40px]">
+          <p className="text-[13px] font-black uppercase text-slate-400 tracking-wider whitespace-normal leading-tight px-4 text-center">
+            {label.name}
           </p>
-          <p className="text-[11px] font-black uppercase text-slate-600 tracking-wider whitespace-normal leading-tight px-2">
-            Short-name={label.shortName}
+          <p className="text-[12px] font-black uppercase text-slate-600 tracking-wider whitespace-normal leading-tight px-4 text-center">
+            {label.shortName}
           </p>
         </div>
       );
     }
     return (
-      <span className="text-[28px] font-black uppercase text-slate-500 tracking-[0.15em] shrink-0 text-center leading-none py-1 drop-shadow-lg">
+      <span className="text-[26px] font-black uppercase text-slate-500 tracking-[0.15em] shrink-0 text-center leading-none py-0.5 drop-shadow-lg">
         {label?.toString() || "ITEM"}
       </span>
     );
   };
 
   return (
-    <div className={`bg-[#151B28] ${isTexture ? 'p-5' : 'p-8 pt-6'} rounded-[3.5rem] border border-slate-800/80 flex flex-col items-center shadow-2xl space-y-5 w-full h-full transition-all relative overflow-hidden`}>
+    <div className={`bg-[#151B28] ${isTexture ? 'p-4' : 'p-8 pt-4 pb-6'} rounded-[3.5rem] border border-slate-800/80 flex flex-col items-center shadow-2xl space-y-4 w-full h-full transition-all relative overflow-hidden`}>
       <div className={`flex items-center justify-center w-full border-b border-slate-800/50 pb-2 px-4 gap-4`}>
         {renderHeader()}
       </div>
@@ -435,7 +435,7 @@ const SelectionCard = ({ label, make, model, img, set, colorTheme, isTexture, is
         </button>
       )}
       
-      <div onClick={set} className={`group cursor-pointer w-full bg-[#0B0F19] ${isTexture ? 'p-6' : 'p-10'} rounded-[3rem] border-4 border-slate-800 ${c.hoverBorder} transition-all active:scale-95 text-center shadow-[0_20px_50px_rgba(0,0,0,0.4)] flex flex-col items-center justify-center flex-1 relative`}>
+      <div onClick={set} className={`group cursor-pointer w-full bg-[#0B0F19] ${isTexture ? 'p-5' : 'p-10'} rounded-[3rem] border-4 border-slate-800 ${c.hoverBorder} transition-all active:scale-95 text-center shadow-[0_20px_50px_rgba(0,0,0,0.4)] flex flex-col items-center justify-center flex-1 relative`}>
         <div className={`aspect-square w-[240px] h-[240px] bg-slate-900 rounded-full overflow-hidden ${isTexture ? 'mb-0' : 'mb-8'} border-8 border-slate-800 flex items-center justify-center relative shadow-[0_0_60px_rgba(0,0,0,0.8)] ${c.groupHoverShadow} ${c.groupHoverBorder} transition-all shrink-0`}>
           {img ? <img src={formatImageUrl(img)} className={imgClass} alt={model} /> : <ImageIcon size={72} className="text-slate-800" />}
           
@@ -470,7 +470,7 @@ export default function App() {
 
   const [texList, setTexList] = useState(() => {
     const saved = localStorage.getItem('tp_tex_list');
-    return saved ? JSON.parse(saved) : [{ make: 'Valino', model: 'Pergea 08R', label: 'Standard' }];
+    return saved ? JSON.parse(saved) : [{ make: 'Valino', model: 'Pergea 08R', label: { name: 'Standard', shortName: 'ST' } }];
   });
 
   const [isDragging, setIsDragging] = useState(false);
@@ -593,6 +593,23 @@ ${textureBlocks}
 `;
   }, [carFile, frontRimMesh, rearRimMesh, frontTireMesh, rearTireMesh, frontMake, frontModel, frontTyre, rearMake, rearModel, rearTyre, texList, frontOffset, rearOffset]);
 
+  const findTyreIni = async (entry) => {
+    if (entry.isFile) {
+      const name = entry.name.toLowerCase();
+      if (name === 'tyres.ini' || name === 'tyre.ini') {
+        return entry;
+      }
+    } else if (entry.isDirectory) {
+      const reader = entry.createReader();
+      const entries = await new Promise(resolve => reader.readEntries(resolve));
+      for (const child of entries) {
+        const found = await findTyreIni(child);
+        if (found) return found;
+      }
+    }
+    return null;
+  };
+
   const handleDrop = async (e) => {
     e.preventDefault();
     setIsDragging(false);
@@ -600,53 +617,61 @@ ${textureBlocks}
     if (!items) return;
 
     const kn5List = [];
-    let tyresIniFile = null;
-
-    const traverseEntry = async (entry, path = "") => {
-      if (entry.isFile) {
-        const name = entry.name.toLowerCase();
-        if (name.endsWith('.kn5') && name !== 'collider.kn5') kn5List.push(entry.name);
-        if (name === 'tyres.ini' && path.toLowerCase().includes('data')) {
-            tyresIniFile = entry;
-        }
-      } else if (entry.isDirectory) {
-        const reader = entry.createReader();
-        const entries = await new Promise(resolve => reader.readEntries(resolve));
-        for (const child of entries) await traverseEntry(child, path + "/" + entry.name);
-      }
-    };
+    let targetTyreIni = null;
 
     for (let i = 0; i < items.length; i++) {
       const entry = items[i].webkitGetAsEntry();
-      if (entry) await traverseEntry(entry);
+      if (!entry) continue;
+
+      const collectKN5s = async (ent) => {
+        if (ent.isFile) {
+          if (ent.name.toLowerCase().endsWith('.kn5') && ent.name.toLowerCase() !== 'collider.kn5') {
+            kn5List.push(ent.name);
+          }
+        } else if (ent.isDirectory) {
+          const r = ent.createReader();
+          const es = await new Promise(resolve => r.readEntries(resolve));
+          for (const c of es) await collectKN5s(c);
+        }
+      };
+      await collectKN5s(entry);
+
+      if (!targetTyreIni) {
+        targetTyreIni = await findTyreIni(entry);
+      }
     }
 
     if (kn5List.length > 0) setCarFile(kn5List.join(', '));
 
-    if (tyresIniFile) {
-        const file = await new Promise(resolve => tyresIniFile.file(resolve));
-        const text = await file.text();
-        const compounds = [];
-        const compoundBlocks = text.split(/\[COMPOUND_/i);
-        compoundBlocks.forEach(block => {
-            const nameMatch = block.match(/NAME\s*=\s*([^\r\n]+)/i);
-            const shortMatch = block.match(/SHORT_NAME\s*=\s*([^\r\n]+)/i);
-            if (nameMatch && shortMatch) {
-                compounds.push(JSON.stringify({ 
-                  name: nameMatch[1].trim(), 
-                  shortName: shortMatch[1].trim() 
-                }));
-            }
-        });
-        const uniqueCompounds = [...new Set(compounds)].map(c => JSON.parse(c));
-        if (uniqueCompounds.length > 0) {
-            const newTexList = uniqueCompounds.map(data => ({
-                make: 'Valino',
-                model: 'Pergea 08R',
-                label: data
-            }));
-            setTexList(newTexList);
+    if (targetTyreIni) {
+      const file = await new Promise(resolve => targetTyreIni.file(resolve));
+      const text = await file.text();
+      const compounds = [];
+      // Look for any line starting with NAME= or SHORT_NAME= globally to find sets
+      const blocks = text.split(/\[/);
+      
+      blocks.forEach(block => {
+        const nameMatch = block.match(/^NAME\s*=\s*([^\r\n]+)/mi);
+        const shortMatch = block.match(/^SHORT_NAME\s*=\s*([^\r\n]+)/mi);
+        
+        if (nameMatch && shortMatch) {
+          compounds.push(JSON.stringify({ 
+            name: nameMatch[1].trim().toUpperCase(), 
+            shortName: shortMatch[1].trim().toUpperCase() 
+          }));
         }
+      });
+      
+      const uniqueCompounds = [...new Set(compounds)].map(c => JSON.parse(c));
+      
+      if (uniqueCompounds.length > 0) {
+          const newTexList = uniqueCompounds.map(data => ({
+              make: 'Valino',
+              model: 'Pergea 08R',
+              label: data
+          }));
+          setTexList(newTexList);
+      }
     }
   };
 
@@ -697,7 +722,7 @@ ${textureBlocks}
   };
 
   const addTexture = () => {
-    setTexList([...texList, { make: 'Valino', model: 'Pergea 08R', label: 'Standard' }]);
+    setTexList([...texList, { make: 'Valino', model: 'Pergea 08R', label: { name: 'Compound', shortName: 'SN' } }]);
   };
 
   const removeTexture = (idx) => {
@@ -711,7 +736,6 @@ ${textureBlocks}
   return (
     <div className="min-h-screen bg-[#0B0F19] text-white font-sans px-6 md:px-12 selection:bg-cyan-500/30 overflow-x-hidden pb-24 relative">
       
-      {/* PATREON STATUS HEADER */}
       <div className="absolute top-6 right-8 z-40">
         {isCheckingAuth ? (
           <span className="text-slate-500 text-xs font-black uppercase tracking-widest animate-pulse">Checking Patreon...</span>
@@ -730,7 +754,6 @@ ${textureBlocks}
         )}
       </div>
 
-      {/* GEN MODALS */}
       {genStep === 'generating' && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/90 backdrop-blur-2xl animate-in fade-in duration-300">
           <div className="w-full max-w-lg bg-[#151B28] border border-slate-800 rounded-[3.5rem] shadow-2xl p-14 text-center space-y-8 relative overflow-hidden">
@@ -749,30 +772,25 @@ ${textureBlocks}
         </div>
       )}
 
-      {/* TRIAL GATE MODAL */}
       {showGate && (
         <div className="fixed inset-0 z-[101] flex items-center justify-center p-4 bg-black/95 backdrop-blur-2xl animate-in fade-in duration-300">
           <div className="w-full max-w-md bg-[#151B28] border border-slate-800 rounded-[3.5rem] shadow-2xl p-12 text-center space-y-8 relative">
             <div className="w-20 h-20 bg-amber-500/10 rounded-3xl flex items-center justify-center mx-auto text-amber-500 border border-amber-500/20">
               <Lock size={40} />
             </div>
-
             <h3 className="text-3xl font-black uppercase italic text-white tracking-tighter">Free Trial Used</h3>
-
             <div className="space-y-2">
               <p className="text-slate-400 text-sm leading-relaxed font-medium">You've used your one free generation.</p>
               <p className="text-slate-400 text-sm leading-relaxed font-medium">Subscribe to the $10 tier for unlimited access.</p>
             </div>
-
             <div className="pt-4 flex flex-col gap-4">
               <a 
                 href="https://www.patreon.com/membership/26118508" 
                 target="_blank"
-                className="w-full py-6 bg-[#FF424D] hover:bg-[#E33B44] text-white rounded-2xl font-black text-sm uppercase tracking-widest transition-all shadow-xl block"
+                className="w-full py-6 bg-[#FF424D] hover:bg-[#E33B44] text-white rounded-2xl font-black text-sm uppercase tracking-widest transition-all shadow-xl block text-center"
               >
                 Subscribe Now – $10/month
               </a>
-              
               <button 
                 onClick={() => setShowGate(false)}
                 className="text-slate-400 hover:text-white transition-colors text-sm underline font-bold"
@@ -780,13 +798,11 @@ ${textureBlocks}
                 Close
               </button>
             </div>
-            
             <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-transparent via-amber-500 to-transparent opacity-40"></div>
           </div>
         </div>
       )}
 
-      {/* GALLERY PICKER MODAL */}
       {pickerOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/95 backdrop-blur-md animate-in fade-in duration-200">
           <div className="bg-[#151B28] w-full max-w-[1450px] max-h-[85vh] rounded-[4rem] shadow-2xl overflow-hidden flex flex-col border border-slate-800">
@@ -841,24 +857,6 @@ ${textureBlocks}
                     ))}
                   </div>
                 </>
-              ) : pickerOpen.includes?.('tyre-profile') ? (
-                <div className="flex-1 overflow-y-auto p-16 grid grid-cols-2 md:grid-cols-4 gap-16 justify-items-center">
-                  {Object.keys(TYRE_STYLES).map(styleKey => (
-                    <div 
-                      key={styleKey} 
-                      onClick={() => { 
-                        (pickerOpen.includes('front') ? setFrontTyre : setRearTyre)(styleKey); 
-                        setPickerOpen(null); 
-                      }} 
-                      className="group cursor-pointer space-y-6 text-center"
-                    >
-                      <div className="w-56 h-56 bg-slate-900 rounded-full overflow-hidden border-4 border-transparent group-hover:border-cyan-500 transition-all shadow-2xl relative flex items-center justify-center">
-                        {TYRE_STYLES[styleKey].img ? <img src={formatImageUrl(TYRE_STYLES[styleKey].img)} className="w-full h-full object-cover scale-110 -translate-x-[1.25%] -translate-y-[0.75%]" /> : <Disc size={64} className="text-slate-800" />}
-                      </div>
-                      <p className="font-black text-[14px] uppercase tracking-[0.3em] text-slate-400 group-hover:text-cyan-400 transition-colors">{TYRE_STYLES[styleKey].name}</p>
-                    </div>
-                  ))}
-                </div>
               ) : (
                 <>
                   <div className="w-72 border-r border-slate-800 overflow-y-auto bg-[#0F141F] p-6 space-y-1 custom-scrollbar">
@@ -896,9 +894,7 @@ ${textureBlocks}
         </div>
       )}
 
-      {/* MAIN LAYOUT WRAPPER */}
       <div className="max-w-[1900px] mx-auto pt-10 pb-12 h-full flex flex-col">
-        
         <header className="flex flex-col items-center justify-center space-y-4 pb-10">
           <img src={formatImageUrl(`id=${LOGO_ID}`)} alt="Logo" className="h-32 md:h-40 drop-shadow-[0_0_35px_rgba(34,211,238,0.6)]" />
           <h1 className="text-5xl md:text-[4.5rem] font-black tracking-tighter uppercase italic leading-none text-center text-white">
@@ -907,48 +903,14 @@ ${textureBlocks}
         </header>
 
         <div className="flex flex-col gap-12">
-          
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8 xl:gap-12">
             <div className="flex flex-col gap-6">
-               <SelectionCard
-                 label="Front Rim"
-                 make={frontMake}
-                 model={frontModel}
-                 img={currentFrontRim.img}
-                 set={() => setPickerOpen('front-rim')}
-                 colorTheme="cyan"
-                 isRim={true}
-               />
-               <SelectionCard
-                 label="Front Profiling"
-                 make=""
-                 model={currentFrontTyre.name}
-                 img={currentFrontTyre.img}
-                 set={() => setPickerOpen('front-tyre-profile')}
-                 colorTheme="cyan"
-                 isProfiling={true}
-               />
+               <SelectionCard label="Front Rim" make={frontMake} model={frontModel} img={currentFrontRim.img} set={() => setPickerOpen('front-rim')} colorTheme="cyan" isRim={true} />
+               <SelectionCard label="Front Profiling" make="" model={currentFrontTyre.name} img={currentFrontTyre.img} set={() => setPickerOpen('front-tyre-profile')} colorTheme="cyan" isProfiling={true} />
             </div>
-
             <div className="flex flex-col gap-6">
-               <SelectionCard
-                 label="Rear Rim"
-                 make={rearMake}
-                 model={rearModel}
-                 img={currentRearRim.img}
-                 set={() => setPickerOpen('rear-rim')}
-                 colorTheme="purple"
-                 isRim={true}
-               />
-               <SelectionCard
-                 label="Rear Profiling"
-                 make=""
-                 model={currentRearTyre.name}
-                 img={currentRearTyre.img}
-                 set={() => setPickerOpen('rear-tyre-profile')}
-                 colorTheme="purple"
-                 isProfiling={true}
-               />
+               <SelectionCard label="Rear Rim" make={rearMake} model={rearModel} img={currentRearRim.img} set={() => setPickerOpen('rear-rim')} colorTheme="purple" isRim={true} />
+               <SelectionCard label="Rear Profiling" make="" model={currentRearTyre.name} img={currentRearTyre.img} set={() => setPickerOpen('rear-tyre-profile')} colorTheme="purple" isProfiling={true} />
             </div>
           </div>
 
@@ -956,24 +918,10 @@ ${textureBlocks}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 gap-8 w-full max-w-[1500px] justify-items-center">
               {texList.map((tex, idx) => (
                 <div key={idx} className="w-full max-w-[620px]">
-                  <SelectionCard
-                    label={tex.label || "TIRE TEXTURE"}
-                    make={tex.make}
-                    model={tex.model}
-                    img={TEXTURE_DATABASE[tex.make]?.find(m => m.name === tex.model)?.img}
-                    set={() => setPickerOpen({ type: 'texture', index: idx })}
-                    colorTheme="cyan"
-                    isTexture={true}
-                    showRemove={texList.length > 1}
-                    onRemove={() => removeTexture(idx)}
-                  />
+                  <SelectionCard label={tex.label} make={tex.make} model={tex.model} img={TEXTURE_DATABASE[tex.make]?.find(m => m.name === tex.model)?.img} set={() => setPickerOpen({ type: 'texture', index: idx })} colorTheme="cyan" isTexture={true} showRemove={texList.length > 1} onRemove={() => removeTexture(idx)} />
                 </div>
               ))}
-              
-              <div 
-                onClick={addTexture}
-                className="w-full max-w-[620px] bg-[#151B28]/40 border-2 border-dashed border-slate-800 rounded-[3.5rem] min-h-[400px] flex flex-col items-center justify-center group cursor-pointer hover:border-cyan-500/50 transition-all hover:bg-cyan-500/5"
-              >
+              <div onClick={addTexture} className="w-full max-w-[620px] bg-[#151B28]/40 border-2 border-dashed border-slate-800 rounded-[3.5rem] min-h-[400px] flex flex-col items-center justify-center group cursor-pointer hover:border-cyan-500/50 transition-all hover:bg-cyan-500/5">
                 <div className="w-24 h-24 bg-slate-900 rounded-full flex items-center justify-center text-slate-700 group-hover:text-cyan-400 group-hover:scale-110 transition-all border-4 border-slate-800 group-hover:border-cyan-500/50 shadow-xl mb-6">
                   <Plus size={48} />
                 </div>
@@ -1007,20 +955,8 @@ ${textureBlocks}
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8 xl:gap-12 px-2">
-               <OffsetController 
-                 label="Front Axle Position Adjustment"
-                 value={frontOffset} 
-                 base={BASE_OFFSETS.front} 
-                 setter={setFrontOffset} 
-                 colorTheme="cyan" 
-               />
-               <OffsetController 
-                 label="Rear Axle Position Adjustment"
-                 value={rearOffset} 
-                 base={BASE_OFFSETS.rear} 
-                 setter={setRearOffset} 
-                 colorTheme="purple" 
-               />
+               <OffsetController label="Front Axle Position Adjustment" value={frontOffset} base={BASE_OFFSETS.front} setter={setFrontOffset} colorTheme="cyan" />
+               <OffsetController label="Rear Axle Position Adjustment" value={rearOffset} base={BASE_OFFSETS.rear} setter={setRearOffset} colorTheme="purple" />
           </div>
 
           <div className="bg-[#151B28] rounded-[3.5rem] p-10 shadow-2xl flex flex-col border border-slate-800/80 h-[600px]">
@@ -1036,14 +972,12 @@ ${textureBlocks}
                  {copySuccess ? <Check size={20} className="text-green-500" /> : <Copy size={20} />} {copySuccess ? 'Copied' : 'Copy All'}
               </button>
             </div>
-            
             <div className="flex-1 overflow-auto bg-[#0B0F19] rounded-[2.5rem] p-10 font-mono text-[13px] leading-relaxed text-slate-400 custom-scrollbar border border-slate-800 shadow-inner whitespace-pre">
               {iniContent}
             </div>
           </div>
-          
         </div>
-        <footer className="text-center py-12 text-[16px] text-slate-700 font-black uppercase tracking-[0.8em] opacity-40 italic mt-12">Master Configurator v4.5</footer>
+        <footer className="text-center py-12 text-[16px] text-slate-700 font-black uppercase tracking-[0.8em] opacity-40 italic mt-12">Master Configurator v4.8</footer>
       </div>
 
       <style dangerouslySetInnerHTML={{ __html: `
