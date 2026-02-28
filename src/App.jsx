@@ -71,7 +71,7 @@ const RIM_DATABASE = {
   "RTR": [{ name: "Tech_7", img: "https://i.imgur.com/tfiPybY.jpeg" }],
   "RV": [{ name: "DF14", img: "https://i.imgur.com/f4Nn8EL.jpeg" }],
   "Speed_Star": [{ name: "mk3", img: "id=1Ab3V7aWusrXMfb6spDNVwV8UlphFaI-W" }],
-  "SSR": [{ name: "Longchamp_XR4Z", img: "https://i.imgur.com/GlzRo7s.jpeg" }, { name: "Vienna_Courage", img: "https://i.imgur.com/6lTegPt.jpeg" }, { name: "Vienna_Kreis", img: "id=11phfjdkn7wn3Esmo2vY_PHxC9j1JsKgU" }],
+  "SSR": [{ name: "Longchamp_XR4Z", img: "https://i.imgur.com/GlzRo7s.jpeg" }, { name: "Vienna_Courage", img: "https://i.imgur.com/vJWtpPj.jpeg" }, { name: "Vienna_Kreis", img: "id=11phfjdkn7wn3Esmo2vY_PHxC9j1JsKgU" }],
   "STROM": [{ name: "DS-F45", img: "id=1frd_mbVHDEEKeZZxCmMOUjhjETyUXxd1" }],
   "TurboFan": [{ name: "TurboFan", img: "id=104HLzCN8AT3O0EuvvwhqESr9F5BNqjkh" }],
   "Volk": [
