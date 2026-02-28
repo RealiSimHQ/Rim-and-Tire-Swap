@@ -1,6 +1,9 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { Car, Disc, Check, Copy, Layers, ClipboardPaste, Search, X, Image as ImageIcon, Trash2, Lock, Zap, Plus, Minus, ChevronLeft, ChevronRight } from 'lucide-react';
 
+// Display helper: underscores → spaces (dashes kept)
+const dn = (s) => s ? s.replace(/_/g, ' ') : '';
+
 // External script for JSZip
 const JSZIP_URL = "https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js";
 
@@ -237,7 +240,7 @@ const SelectionCard = ({ label, make, model, img, set, colorTheme, isTexture, is
     if (typeof label === 'object' && label !== null) {
       return (
         <div className="flex flex-col items-center justify-center w-full text-center gap-0.5 py-1 min-h-[40px]">
-          <p className="text-[13px] font-black uppercase text-slate-400 tracking-wider whitespace-normal leading-tight px-4 text-center italic">{label.name.replace(/_/g, ' ')}</p>
+          <p className="text-[13px] font-black uppercase text-slate-400 tracking-wider whitespace-normal leading-tight px-4 text-center italic">{dn(label.name)}</p>
           <p className="text-[12px] font-black uppercase text-slate-600 tracking-wider whitespace-normal leading-tight px-4 text-center">{label.shortName}</p>
         </div>
       );
@@ -256,16 +259,16 @@ const SelectionCard = ({ label, make, model, img, set, colorTheme, isTexture, is
           {isTexture && (
             <div className="absolute inset-0 flex items-center justify-center">
               <div className="w-48 h-48 bg-[#0B0F19]/85 backdrop-blur-md rounded-full border-2 border-cyan-500/50 flex flex-col items-center justify-center p-6 shadow-2xl group-hover:border-cyan-400 group-hover:scale-105 transition-all">
-                <p className="text-[12px] font-black text-cyan-500 uppercase tracking-[0.3em] mb-2 italic opacity-80">{make}</p>
-                <p className="text-[18px] font-black text-white uppercase italic tracking-tighter leading-tight text-center px-2">{model}</p>
+                <p className="text-[12px] font-black text-cyan-500 uppercase tracking-[0.3em] mb-2 italic opacity-80">{dn(make)}</p>
+                <p className="text-[18px] font-black text-white uppercase italic tracking-tighter leading-tight text-center px-2">{dn(model)}</p>
               </div>
             </div>
           )}
         </div>
         {!isTexture && (
           <>
-            {make && <p className="text-[13px] font-black text-slate-700 uppercase tracking-[0.3em] mb-3 font-mono italic text-center">{make}</p>}
-            <p className="text-[28px] font-black text-white uppercase italic truncate tracking-tighter leading-none w-full px-4 mb-2 text-center">{model}</p>
+            {make && <p className="text-[13px] font-black text-slate-700 uppercase tracking-[0.3em] mb-3 font-mono italic text-center">{dn(make)}</p>}
+            <p className="text-[28px] font-black text-white uppercase italic truncate tracking-tighter leading-none w-full px-4 mb-2 text-center">{dn(model)}</p>
           </>
         )}
       </div>
@@ -343,7 +346,7 @@ const WheelAssembly = ({ side, rimMake, rimModel, rimImg, tyreName, tyreImg, tyr
           <ChevronLeft size={16} />
         </button>
         <p onClick={onOpenRimPicker} className="flex-1 text-lg font-black uppercase tracking-wider text-white text-center cursor-pointer hover:text-cyan-400 transition-colors truncate px-2">
-          {rimMake} {rimModel}
+          {dn(rimMake)} {dn(rimModel)}
         </p>
         <button onClick={() => cycleRim(1)} className="w-8 h-8 flex-shrink-0 flex items-center justify-center rounded-full border-2 border-slate-700 bg-[#0B0F19] text-slate-600 hover:border-cyan-500 hover:text-cyan-400 transition-all">
           <ChevronRight size={16} />
@@ -817,7 +820,7 @@ ${textureBlocks}
                         const newList = [...texList];
                         newList[pickerOpen.index].make = make;
                         setTexList(newList);
-                      }} className={`w-full text-left px-8 py-5 text-[14px] font-black tracking-widest transition-all rounded-[2rem] ${texList[pickerOpen.index].make === make ? 'bg-cyan-600 text-white shadow-xl scale-105 shadow-cyan-900/40' : 'text-slate-500 hover:text-white hover:bg-slate-800/50'}`}>{make}</button>
+                      }} className={`w-full text-left px-8 py-5 text-[14px] font-black tracking-widest transition-all rounded-[2rem] ${texList[pickerOpen.index].make === make ? 'bg-cyan-600 text-white shadow-xl scale-105 shadow-cyan-900/40' : 'text-slate-500 hover:text-white hover:bg-slate-800/50'}`}>{dn(make)}</button>
                     ))}
                   </div>
                   <div className="flex-1 overflow-y-auto p-16 grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-12 custom-scrollbar">
@@ -832,12 +835,12 @@ ${textureBlocks}
                           <img src={formatImageUrl(model.img)} className="w-full h-full object-cover scale-[1.07]" alt={model.name} />
                           <div className="absolute inset-0 flex items-center justify-center">
                             <div className="w-[80%] h-[80%] bg-[#0B0F19]/85 backdrop-blur-md rounded-full border-2 border-cyan-500/50 flex flex-col items-center justify-center p-4 shadow-2xl group-hover:border-cyan-400 group-hover:scale-105 transition-all">
-                              <p className="text-[8px] md:text-[10px] font-black text-cyan-500 uppercase tracking-[0.2em] mb-1 italic opacity-80">{texList[pickerOpen.index].make}</p>
-                              <p className="text-[10px] md:text-[13px] font-black text-white uppercase italic tracking-tighter leading-tight text-center px-1">{model.name}</p>
+                              <p className="text-[8px] md:text-[10px] font-black text-cyan-500 uppercase tracking-[0.2em] mb-1 italic opacity-80">{dn(texList[pickerOpen.index].make)}</p>
+                              <p className="text-[10px] md:text-[13px] font-black text-white uppercase italic tracking-tighter leading-tight text-center px-1">{dn(model.name)}</p>
                             </div>
                           </div>
                         </div>
-                        <p className="text-[12px] font-black text-slate-500 group-hover:text-white transition-colors uppercase tracking-[0.2em] px-2 truncate opacity-0 group-hover:opacity-100">{model.name}</p>
+                        <p className="text-[12px] font-black text-slate-500 group-hover:text-white transition-colors uppercase tracking-[0.2em] px-2 truncate opacity-0 group-hover:opacity-100">{dn(model.name)}</p>
                       </div>
                     ))}
                   </div>
@@ -857,16 +860,16 @@ ${textureBlocks}
                 <>
                   <div className="w-72 border-r border-slate-800 overflow-y-auto bg-[#0F141F] p-6 space-y-1 custom-scrollbar">
                     {RIM_MAKES.map(make => (
-                      <button key={make} onClick={() => (pickerOpen.includes('front') ? setFrontMake : setRearMake)(make)} className={`w-full text-left px-8 py-5 text-[14px] font-black tracking-widest transition-all rounded-[2rem] ${(pickerOpen.includes('front') ? frontMake : rearMake) === make ? 'bg-cyan-600 text-white shadow-xl scale-105 shadow-cyan-900/40' : 'text-slate-500 hover:text-white hover:bg-slate-800/50'}`}>{make}</button>
+                      <button key={make} onClick={() => (pickerOpen.includes('front') ? setFrontMake : setRearMake)(make)} className={`w-full text-left px-8 py-5 text-[14px] font-black tracking-widest transition-all rounded-[2rem] ${(pickerOpen.includes('front') ? frontMake : rearMake) === make ? 'bg-cyan-600 text-white shadow-xl scale-105 shadow-cyan-900/40' : 'text-slate-500 hover:text-white hover:bg-slate-800/50'}`}>{dn(make)}</button>
                     ))}
                   </div>
                   <div className="flex-1 overflow-y-auto p-16 grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-12 custom-scrollbar">
                     {RIM_DATABASE[pickerOpen.includes('front') ? frontMake : rearMake].map(model => (
                       <div key={model.name} onClick={() => { (pickerOpen.includes('front') ? setFrontModel : setRearModel)(model.name); setPickerOpen(null); }} className="group cursor-pointer space-y-4 text-center">
-                        <div className="aspect-square bg-slate-900 rounded-full overflow-hidden border-4 border-transparent group-hover:border-cyan-500 transition-all relative flex items-center justify-center shadow-xl">
-                          {model.img ? <img src={formatImageUrl(model.img)} className="w-full h-full object-cover scale-[1.12] -translate-x-[1.25%] -translate-y-[2.25%]" alt={model.name} /> : <ImageIcon size={48} className="text-slate-800" />}
+                        <div className="aspect-square bg-slate-900 rounded-full overflow-hidden border-4 border-transparent group-hover:border-cyan-500 transition-[border-color] duration-150 relative flex items-center justify-center shadow-xl will-change-[border-color]">
+                          {model.img ? <img src={formatImageUrl(model.img)} className="w-full h-full object-cover scale-[1.12] -translate-x-[1.25%] -translate-y-[2.25%]" alt={model.name} loading="lazy" /> : <ImageIcon size={48} className="text-slate-800" />}
                         </div>
-                        <p className="text-[12px] font-black text-slate-500 group-hover:text-white transition-colors uppercase tracking-[0.2em] px-2 truncate">{model.name}</p>
+                        <p className="text-[12px] font-black text-slate-500 group-hover:text-white transition-colors duration-150 uppercase tracking-[0.2em] px-2 truncate">{dn(model.name)}</p>
                       </div>
                     ))}
                   </div>
