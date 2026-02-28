@@ -723,6 +723,7 @@ ${textureBlocks}
           <a href="/ac-physics-tool/" className="text-cyan-400 hover:bg-slate-800 px-3 py-1 rounded mx-1 transition-colors no-underline">OG Physics</a>
           <a href="/extended-physics-drift-edition/" className="text-cyan-400 hover:bg-slate-800 px-3 py-1 rounded mx-1 transition-colors no-underline">Extended Physics</a>
           <a href="/Rim-and-Tire-Swap/" className="text-[#f0b429] bg-slate-800 px-3 py-1 rounded mx-1 font-bold no-underline">Rim & Tire Swap</a>
+          <a href="/ac-extension-wizard/" className="text-cyan-400 hover:bg-slate-800 px-3 py-1 rounded mx-1 transition-colors no-underline">Extension Wizard</a>
         </nav>
       )}
 
