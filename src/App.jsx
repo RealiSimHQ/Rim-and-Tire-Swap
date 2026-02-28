@@ -237,7 +237,7 @@ const SelectionCard = ({ label, make, model, img, set, colorTheme, isTexture, is
     if (typeof label === 'object' && label !== null) {
       return (
         <div className="flex flex-col items-center justify-center w-full text-center gap-0.5 py-1 min-h-[40px]">
-          <p className="text-[13px] font-black uppercase text-slate-400 tracking-wider whitespace-normal leading-tight px-4 text-center">{label.name}</p>
+          <p className="text-[13px] font-black uppercase text-slate-400 tracking-wider whitespace-normal leading-tight px-4 text-center italic">{label.name.replace(/_/g, ' ')}</p>
           <p className="text-[12px] font-black uppercase text-slate-600 tracking-wider whitespace-normal leading-tight px-4 text-center">{label.shortName}</p>
         </div>
       );
