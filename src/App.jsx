@@ -103,6 +103,101 @@ const RIM_DATABASE = {
 
 const TEXTURE_MAKES = Object.keys(TEXTURE_DATABASE).sort();
 const RIM_MAKES = Object.keys(RIM_DATABASE).sort();
+const ALL_TYRE_KEYS = Object.keys(TYRE_STYLES);
+
+// Collect all rim entries as flat array for random picking
+const ALL_RIMS = Object.entries(RIM_DATABASE).flatMap(([make, models]) =>
+  models.map(m => ({ make, ...m }))
+);
+
+function pickRandom(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
+
+function generateINI({ carFile, frontRimMesh, rearRimMesh, frontTireMesh, rearTireMesh,
+  fMake, fModel, fTyre, rMake, rModel, rTyre, texList: tList,
+  fOffset, rOffset, fWidth, rWidth, fTireRadius, rTireRadius }) {
+  const ftData = TYRE_STYLES[fTyre];
+  const rtData = TYRE_STYLES[rTyre];
+  const clean = (str) => str.trim().replace(/,$/, '').replace(/,\s*$/, '');
+  const frontRimDelta = RIM_DATABASE[fMake]?.find(m => m.name === fModel)?.offsetDelta || 0;
+  const rearRimDelta = RIM_DATABASE[rMake]?.find(m => m.name === rModel)?.offsetDelta || 0;
+  const fOffStr = `${fOffset.toFixed(3)}, 0.0`;
+  const fRimOffStr = `${(fOffset + frontRimDelta).toFixed(3)}, 0.0`;
+  const rOffStr = `0.0, ${rOffset.toFixed(3)}`;
+  const rRimOffStr = `0.0, ${(rOffset + rearRimDelta).toFixed(3)}`;
+  const ftBaseRimWidth = parseFloat(ftData.front.rim.split(',')[1]) || 0.178;
+  const ftBaseTyreWidth = RIM_DATABASE[fMake]?.find(m => m.name === fModel)?.tyreWidthOverride?.front ?? (parseFloat(ftData.front.tyre.split(',')[1]) || 0.185);
+  const rtBaseRimWidth = parseFloat(rtData.rear.rim.split(',')[1]) || 0.178;
+  const rtBaseTyreWidth = RIM_DATABASE[rMake]?.find(m => m.name === rModel)?.tyreWidthOverride?.rear ?? (parseFloat(rtData.rear.tyre.split(',')[1]) || 0.185);
+  const frontRadiusDelta = fTireRadius - 0.3150;
+  const rearRadiusDelta = rTireRadius - 0.3150;
+  const frontWidthDelta = ((fWidth - 245) / 5) * -0.01;
+  const rearWidthDelta = ((rWidth - 245) / 5) * -0.01;
+  const frontRimWidthInternal = (ftBaseRimWidth + frontWidthDelta).toFixed(3);
+  const frontTyreWidthInternal = (ftBaseTyreWidth + frontWidthDelta).toFixed(3);
+  const rearRimWidthInternal = (rtBaseRimWidth + rearWidthDelta).toFixed(3);
+  const rearTyreWidthInternal = (rtBaseTyreWidth + rearWidthDelta).toFixed(3);
+  const textureBlocks = tList.map((tex, idx) => {
+    const entryArr = TEXTURE_DATABASE[tex.make];
+    const entry = entryArr?.find(m => m.name === tex.model) || entryArr?.[0] || TEXTURE_DATABASE["Valino"][0];
+    const labelText = typeof tex.label === 'object' ? `${tex.label.name}-${tex.label.shortName}` : (tex.label || tex.make);
+    return `;----${labelText}----;\n${getTextureINI(entry.key, idx)}`;
+  }).join('\n\n');
+  return `;===================================================================================================================
+; Rim/Tyre Swap Generated Config
+;===================================================================================================================
+[INCLUDE: common/materials_interior.ini]
+[INCLUDE: common/custom_rims.ini]
+; --- FRONT SETUP ---
+[ReplaceRims]
+File = ${clean(carFile)}
+OriginalRims = ${clean(frontRimMesh)}
+Model = /../../parts/rims/${fMake}/${fModel}.kn5, ${(parseFloat(ftData.front.rim.split(',')[0]) + frontRadiusDelta).toFixed(3)}, ${frontRimWidthInternal}
+Offset = ${fRimOffStr}
+FrontOnly=1
+[ReplaceRims]
+File = ${clean(carFile)}
+OriginalRims = ${clean(frontTireMesh)}
+Model = /../../parts/tyre/${ftData.file}, ${(parseFloat(ftData.front.tyre.split(',')[0]) + frontRadiusDelta).toFixed(3)}, ${frontTyreWidthInternal}
+Offset = ${fOffStr}
+FrontOnly=1
+; --- REAR SETUP ---
+[ReplaceRims]
+File = ${clean(carFile)}
+OriginalRims = ${clean(rearRimMesh)}
+Model = /../../parts/rims/${rMake}/${rModel}.kn5, ${(parseFloat(rtData.rear.rim.split(',')[0]) + rearRadiusDelta).toFixed(3)}, ${rearRimWidthInternal}
+Offset = ${rRimOffStr}
+RearOnly=1
+[ReplaceRims]
+File = ${clean(carFile)}
+OriginalRims = ${clean(rearTireMesh)}
+Model = /../../parts/tyre/${rtData.file}, ${(parseFloat(rtData.rear.tyre.split(',')[0]) + rearRadiusDelta).toFixed(3)}, ${rearTyreWidthInternal}
+Offset = ${rOffStr}
+RearOnly=1
+;===================================================================================================================
+; Tyres Lighting & Textures
+;===================================================================================================================
+[SHADER_REPLACEMENT_...]
+MATERIALS = 21 - Default, Tyre.001, TIRE, Tyre_Stock, Tyre_Pro, Tyre_Thicc, Tyre_Stretched, Tyre, Tyres, TYRE, TIRE, TYRES
+PROP_... = ksAmbient, 0.25
+PROP_... = ksDiffuse, 0.12
+PROP_... = ksSpecular, 0.002
+PROP_... = ksSpecularEXP, 350
+PROP_... = KsAlphaRef, 0
+PROP_... = blurLevel, 0
+PROP_... = dirtyLevel, 0.00
+PROP_... = fresnelC, 0.000
+PROP_... = fresnelEXP, 5
+PROP_... = fresnelMaxLevel, 0.000
+PROP_... = isAdditive, 0
+DOUBLE_FACE_SHADOW_BIASED = 1
+[SHADER_REPLACEMENT_...]
+MATERIALS = Tyre_Stock, Tyre_Pro, Tyre_Thicc, Tyre_Stretched, 21 - Default, Tyre.001
+SHADER = ksTyresFX
+; --- TIRE TEXTURES ---
+${textureBlocks}
+;===================================================================================================================
+`;
+}
 
 const TEXTURE_CONFIGS = {
   Accelera_651: { folder: "Accelera_651", diffuse: "tyre.dds", blur: "tyre_blur.dds", normal: "tyre_NM.dds", normalBlur: "tyre_blur_NM.dds" },
@@ -442,6 +537,57 @@ export default function App() {
     }
   ];
 
+  const [isBatchGenerating, setIsBatchGenerating] = useState(false);
+
+  const batchGenerate = async (count) => {
+    if (!carFile || !frontRimMesh || !rearRimMesh || !frontTireMesh || !rearTireMesh) {
+      setError("Fill in car file and mesh names before batch generating.");
+      return;
+    }
+    setIsBatchGenerating(true);
+    try {
+      // Load JSZip
+      if (!window.JSZip) {
+        const s = document.createElement('script'); s.src = JSZIP_URL;
+        document.head.appendChild(s);
+        await new Promise(r => { s.onload = r; });
+      }
+      // Fetch livery.png
+      const liveryResp = await fetch(`${import.meta.env.BASE_URL}livery.png`);
+      const liveryBlob = await liveryResp.blob();
+
+      const zip = new window.JSZip();
+      for (let i = 0; i < count; i++) {
+        const num = String(i + 1).padStart(2, '0');
+        const folderName = `skins/${num}.RealiSimHQ`;
+        // Random front & rear rims
+        const fRim = pickRandom(ALL_RIMS);
+        const rRim = pickRandom(ALL_RIMS);
+        // Random front & rear tyre styles
+        const fTyre = pickRandom(ALL_TYRE_KEYS);
+        const rTyre = pickRandom(ALL_TYRE_KEYS);
+        const ini = generateINI({
+          carFile, frontRimMesh, rearRimMesh, frontTireMesh, rearTireMesh,
+          fMake: fRim.make, fModel: fRim.name, fTyre, rMake: rRim.make, rModel: rRim.name, rTyre,
+          texList, fOffset: frontOffset, rOffset: rearOffset,
+          fWidth: frontWidth, rWidth: rearWidth, fTireRadius: frontTireRadius, rTireRadius: rearTireRadius
+        });
+        zip.file(`${folderName}/ext_config.ini`, ini);
+        zip.file(`${folderName}/livery.png`, liveryBlob);
+      }
+      const blob = await zip.generateAsync({ type: 'blob' });
+      const link = document.createElement('a');
+      link.href = URL.createObjectURL(blob);
+      link.download = `RealiSimHQ_batch_${count}.zip`;
+      link.click();
+      URL.revokeObjectURL(link.href);
+    } catch (err) {
+      console.error(err);
+      setError("Batch generation failed: " + err.message);
+    }
+    setIsBatchGenerating(false);
+  };
+
   useEffect(() => {
     const name = checkPatreonSession();
     setPatronName(name);
@@ -471,91 +617,13 @@ export default function App() {
 
   const remainingFree = MAX_FREE_GENERATIONS - freeGenCount;
 
-  const iniContent = useMemo(() => {
-    const ftData = TYRE_STYLES[frontTyre];
-    const rtData = TYRE_STYLES[rearTyre];
-    const clean = (str) => str.trim().replace(/,$/, '').replace(/,\s*$/, '');
-    const frontRimDelta = RIM_DATABASE[frontMake]?.find(m => m.name === frontModel)?.offsetDelta || 0;
-    const rearRimDelta = RIM_DATABASE[rearMake]?.find(m => m.name === rearModel)?.offsetDelta || 0;
-    const fOffStr = `${frontOffset.toFixed(3)}, 0.0`;
-    const fRimOffStr = `${(frontOffset + frontRimDelta).toFixed(3)}, 0.0`;
-    const rOffStr = `0.0, ${rearOffset.toFixed(3)}`;
-    const rRimOffStr = `0.0, ${(rearOffset + rearRimDelta).toFixed(3)}`;
-    // Width adjustment: each 5mm step from 215 baseline = ±0.01 internal units
-    const ftBaseRimWidth = parseFloat(ftData.front.rim.split(',')[1]) || 0.178;
-    const ftBaseTyreWidth = RIM_DATABASE[frontMake]?.find(m => m.name === frontModel)?.tyreWidthOverride?.front ?? (parseFloat(ftData.front.tyre.split(',')[1]) || 0.185);
-    const rtBaseRimWidth = parseFloat(rtData.rear.rim.split(',')[1]) || 0.178;
-    const rtBaseTyreWidth = RIM_DATABASE[rearMake]?.find(m => m.name === rearModel)?.tyreWidthOverride?.rear ?? (parseFloat(rtData.rear.tyre.split(',')[1]) || 0.185);
-    const frontRadiusDelta = frontTireRadius - 0.3150;
-    const rearRadiusDelta = rearTireRadius - 0.3150;
-    const frontWidthDelta = ((frontWidth - 245) / 5) * -0.01;
-    const rearWidthDelta = ((rearWidth - 245) / 5) * -0.01;
-    const frontRimWidthInternal = (ftBaseRimWidth + frontWidthDelta).toFixed(3);
-    const frontTyreWidthInternal = (ftBaseTyreWidth + frontWidthDelta).toFixed(3);
-    const rearRimWidthInternal = (rtBaseRimWidth + rearWidthDelta).toFixed(3);
-    const rearTyreWidthInternal = (rtBaseTyreWidth + rearWidthDelta).toFixed(3);
-    const textureBlocks = texList.map((tex, idx) => {
-      const entryArr = TEXTURE_DATABASE[tex.make];
-      const entry = entryArr?.find(m => m.name === tex.model) || entryArr?.[0] || TEXTURE_DATABASE["Valino"][0];
-      const labelText = typeof tex.label === 'object' ? `${tex.label.name}-${tex.label.shortName}` : (tex.label || tex.make);
-      return `;----${labelText}----;\n${getTextureINI(entry.key, idx)}`;
-    }).join('\n\n');
-    return `;===================================================================================================================
-; Rim/Tyre Swap Generated Config
-;===================================================================================================================
-[INCLUDE: common/materials_interior.ini]
-[INCLUDE: common/custom_rims.ini]
-; --- FRONT SETUP ---
-[ReplaceRims]
-File = ${clean(carFile)}
-OriginalRims = ${clean(frontRimMesh)}
-Model = /../../parts/rims/${frontMake}/${frontModel}.kn5, ${(parseFloat(ftData.front.rim.split(',')[0]) + frontRadiusDelta).toFixed(3)}, ${frontRimWidthInternal}
-Offset = ${fRimOffStr}
-FrontOnly=1
-[ReplaceRims]
-File = ${clean(carFile)}
-OriginalRims = ${clean(frontTireMesh)}
-Model = /../../parts/tyre/${ftData.file}, ${(parseFloat(ftData.front.tyre.split(',')[0]) + frontRadiusDelta).toFixed(3)}, ${frontTyreWidthInternal}
-Offset = ${fOffStr}
-FrontOnly=1
-; --- REAR SETUP ---
-[ReplaceRims]
-File = ${clean(carFile)}
-OriginalRims = ${clean(rearRimMesh)}
-Model = /../../parts/rims/${rearMake}/${rearModel}.kn5, ${(parseFloat(rtData.rear.rim.split(',')[0]) + rearRadiusDelta).toFixed(3)}, ${rearRimWidthInternal}
-Offset = ${rRimOffStr}
-RearOnly=1
-[ReplaceRims]
-File = ${clean(carFile)}
-OriginalRims = ${clean(rearTireMesh)}
-Model = /../../parts/tyre/${rtData.file}, ${(parseFloat(rtData.rear.tyre.split(',')[0]) + rearRadiusDelta).toFixed(3)}, ${rearTyreWidthInternal}
-Offset = ${rOffStr}
-RearOnly=1
-;===================================================================================================================
-; Tyres Lighting & Textures
-;===================================================================================================================
-[SHADER_REPLACEMENT_...]
-MATERIALS = 21 - Default, Tyre.001, TIRE, Tyre_Stock, Tyre_Pro, Tyre_Thicc, Tyre_Stretched, Tyre, Tyres, TYRE, TIRE, TYRES
-PROP_... = ksAmbient, 0.25
-PROP_... = ksDiffuse, 0.12
-PROP_... = ksSpecular, 0.002
-PROP_... = ksSpecularEXP, 350
-PROP_... = KsAlphaRef, 0
-PROP_... = blurLevel, 0
-PROP_... = dirtyLevel, 0.00
-PROP_... = fresnelC, 0.000
-PROP_... = fresnelEXP, 5
-PROP_... = fresnelMaxLevel, 0.000
-PROP_... = isAdditive, 0
-DOUBLE_FACE_SHADOW_BIASED = 1
-[SHADER_REPLACEMENT_...]
-MATERIALS = Tyre_Stock, Tyre_Pro, Tyre_Thicc, Tyre_Stretched, 21 - Default, Tyre.001
-SHADER = ksTyresFX
-; --- TIRE TEXTURES ---
-${textureBlocks}
-;===================================================================================================================
-`;
-  }, [carFile, frontRimMesh, rearRimMesh, frontTireMesh, rearTireMesh, frontMake, frontModel, frontTyre, rearMake, rearModel, rearTyre, texList, frontOffset, rearOffset, frontWidth, rearWidth, frontTireRadius, rearTireRadius]);
+  const iniContent = useMemo(() => generateINI({
+    carFile, frontRimMesh, rearRimMesh, frontTireMesh, rearTireMesh,
+    fMake: frontMake, fModel: frontModel, fTyre: frontTyre,
+    rMake: rearMake, rModel: rearModel, rTyre: rearTyre,
+    texList, fOffset: frontOffset, rOffset: rearOffset,
+    fWidth: frontWidth, rWidth: rearWidth, fTireRadius: frontTireRadius, rTireRadius: rearTireRadius
+  }), [carFile, frontRimMesh, rearRimMesh, frontTireMesh, rearTireMesh, frontMake, frontModel, frontTyre, rearMake, rearModel, rearTyre, texList, frontOffset, rearOffset, frontWidth, rearWidth, frontTireRadius, rearTireRadius]);
 
   const handleDrop = async (e) => {
     e.preventDefault();
@@ -1051,17 +1119,40 @@ ${textureBlocks}
             Presets
           </button>
           {presetsOpen && (
-            <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-              {PRESETS.map((preset, i) => (
-                <button
-                  key={i}
-                  onClick={() => { preset.apply(); }}
-                  className="p-5 bg-[#0B0F19] hover:bg-slate-800/80 rounded-2xl border border-slate-700 hover:border-cyan-500/40 transition-all text-left group active:scale-95"
-                >
-                  <p className="text-[13px] font-black uppercase tracking-[0.2em] text-cyan-400 group-hover:text-cyan-300">{preset.name}</p>
-                  <p className="text-[11px] text-slate-500 mt-1 tracking-wider">{preset.desc}</p>
-                </button>
-              ))}
+            <div className="mt-4 space-y-6">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                {PRESETS.map((preset, i) => (
+                  <button
+                    key={i}
+                    onClick={() => { preset.apply(); }}
+                    className="p-5 bg-[#0B0F19] hover:bg-slate-800/80 rounded-2xl border border-slate-700 hover:border-cyan-500/40 transition-all text-left group active:scale-95"
+                  >
+                    <p className="text-[13px] font-black uppercase tracking-[0.2em] text-cyan-400 group-hover:text-cyan-300">{preset.name}</p>
+                    <p className="text-[11px] text-slate-500 mt-1 tracking-wider">{preset.desc}</p>
+                  </button>
+                ))}
+              </div>
+              {/* Batch Generate */}
+              <div className="border-t border-slate-700/50 pt-4">
+                <p className="text-[11px] font-black uppercase tracking-[0.3em] text-slate-600 mb-3">Batch Generate — Random Rims & Tyres</p>
+                <div className="flex gap-3">
+                  <button
+                    onClick={() => batchGenerate(5)}
+                    disabled={isBatchGenerating}
+                    className="px-6 py-3 bg-[#0B0F19] hover:bg-emerald-900/30 rounded-xl border border-slate-700 hover:border-emerald-500/40 text-[12px] font-black uppercase tracking-[0.2em] text-emerald-400 hover:text-emerald-300 transition-all active:scale-95 disabled:opacity-30 disabled:cursor-not-allowed"
+                  >
+                    {isBatchGenerating ? 'Generating...' : 'Generate 5'}
+                  </button>
+                  <button
+                    onClick={() => batchGenerate(10)}
+                    disabled={isBatchGenerating}
+                    className="px-6 py-3 bg-[#0B0F19] hover:bg-emerald-900/30 rounded-xl border border-slate-700 hover:border-emerald-500/40 text-[12px] font-black uppercase tracking-[0.2em] text-emerald-400 hover:text-emerald-300 transition-all active:scale-95 disabled:opacity-30 disabled:cursor-not-allowed"
+                  >
+                    {isBatchGenerating ? 'Generating...' : 'Generate 10'}
+                  </button>
+                </div>
+                <p className="text-[10px] text-slate-600 mt-2 tracking-wider">Uses current settings (offsets, widths, radii, textures) with randomized rims & tyre styles per skin</p>
+              </div>
             </div>
           )}
         </div>
