@@ -73,7 +73,7 @@ const RIM_DATABASE = {
   "Panasports": [{ name: "G7", img: "https://i.imgur.com/kriY2Vv.jpeg" }],
   "Rotiform": [{ name: "Beadlock", img: "https://i.imgur.com/tofxD6c.jpeg" }, { name: "ZMO", img: "https://i.imgur.com/o4bjzmD.jpeg" }],
   "RTR": [{ name: "Tech_7", img: "https://i.imgur.com/tfiPybY.jpeg" }],
-  "RV": [{ name: "DF14", img: "https://i.imgur.com/f4Nn8EL.jpeg" }],
+  "RV": [{ name: "DF14", img: "https://i.imgur.com/f4Nn8EL.jpeg", offsetDelta: -0.018 }],
   "Speed_Star": [{ name: "mk3", img: "id=1Ab3V7aWusrXMfb6spDNVwV8UlphFaI-W" }],
   "SSR": [{ name: "Longchamp_XR4Z", img: "https://i.imgur.com/GlzRo7s.jpeg" }, { name: "Vienna_Courage", img: "https://i.imgur.com/vJWtpPj.jpeg" }, { name: "Vienna_Kreis", img: "id=11phfjdkn7wn3Esmo2vY_PHxC9j1JsKgU" }],
   "STROM": [{ name: "DS-F45", img: "id=1frd_mbVHDEEKeZZxCmMOUjhjETyUXxd1" }],
