@@ -472,8 +472,8 @@ export default function App() {
     const ftBaseTyreWidth = RIM_DATABASE[frontMake]?.find(m => m.name === frontModel)?.tyreWidthOverride?.front ?? (parseFloat(ftData.front.tyre.split(',')[1]) || 0.185);
     const rtBaseRimWidth = parseFloat(rtData.rear.rim.split(',')[1]) || 0.178;
     const rtBaseTyreWidth = RIM_DATABASE[rearMake]?.find(m => m.name === rearModel)?.tyreWidthOverride?.rear ?? (parseFloat(rtData.rear.tyre.split(',')[1]) || 0.185);
-    const frontRadiusDelta = 0.3150 - frontTireRadius;
-    const rearRadiusDelta = 0.3150 - rearTireRadius;
+    const frontRadiusDelta = frontTireRadius - 0.3150;
+    const rearRadiusDelta = rearTireRadius - 0.3150;
     const frontWidthDelta = ((frontWidth - 215) / 5) * -0.01;
     const rearWidthDelta = ((rearWidth - 215) / 5) * -0.01;
     const frontRimWidthInternal = (ftBaseRimWidth + frontWidthDelta).toFixed(3);
