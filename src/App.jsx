@@ -566,11 +566,15 @@ ${textureBlocks}
 
       const uniqueTextures = new Map();
       const widths = [];
+      const radii = [];
 
       blocks.forEach(block => {
         const nameMatch = block.match(/^NAME\s*=\s*([^\r\n]+)/mi);
         const shortMatch = block.match(/^SHORT_NAME\s*=\s*([^\r\n]+)/mi);
         const widthMatch = block.match(/^WIDTH\s*=\s*([0-9.]+)/mi);
+
+        const radiusMatch = block.match(/^RADIUS\s*=\s*([0-9.]+)/mi);
+        if (radiusMatch) radii.push(parseFloat(radiusMatch[1]));
 
         if (widthMatch) {
           const internal = parseFloat(widthMatch[1]);
@@ -594,6 +598,10 @@ ${textureBlocks}
       if (widths.length > 0) {
         setFrontWidth(widths[0]);
         setRearWidth(widths[1] !== undefined ? widths[1] : widths[0]);
+      }
+
+      if (radii.length > 0) {
+        setTireRadius(radii[0]);
       }
 
       if (uniqueTextures.size > 0) {
@@ -627,7 +635,7 @@ ${textureBlocks}
     setFrontMake('Advan'); setFrontModel('A3A'); setFrontTyre('Stretched');
     setRearMake('Work'); setRearModel('Blitz_03'); setRearTyre('Thicc');
     setFrontOffset(BASE_OFFSETS.front); setRearOffset(BASE_OFFSETS.rear);
-    setFrontWidth(215); setRearWidth(215);
+    setFrontWidth(215); setRearWidth(215); setTireRadius(0.3150);
     setTexList([{ make: 'Valino', model: 'Pergea 08R', label: { name: 'Standard', shortName: 'ST' } }]);
     localStorage.removeItem('tp_car'); localStorage.removeItem('tp_frm'); localStorage.removeItem('tp_rrm');
     localStorage.removeItem('tp_ftm'); localStorage.removeItem('tp_rtm'); localStorage.removeItem('tp_f_off');
