@@ -402,7 +402,7 @@ export default function App() {
   const [rearTireMesh, setRearTireMesh] = useState(() => localStorage.getItem('tp_rtm') || '');
   const [texList, setTexList] = useState(() => {
     const saved = localStorage.getItem('tp_tex_list');
-    return saved ? JSON.parse(saved) : [{ make: 'Valino', model: 'Pergea 08R', label: { name: 'Standard', shortName: 'ST' } }];
+    return saved ? JSON.parse(saved) : [{ make: 'Accelera', model: '651 Sport', label: { name: 'Standard', shortName: 'ST' } }];
   });
   const [isDragging, setIsDragging] = useState(false);
   const [genStep, setGenStep] = useState('idle');
@@ -630,8 +630,8 @@ ${textureBlocks}
 
       if (uniqueTextures.size > 0) {
         const newTexList = Array.from(uniqueTextures.values()).map(data => ({
-          make: 'Valino',
-          model: 'Pergea 08R',
+          make: 'Accelera',
+          model: '651 Sport',
           label: data
         }));
         setTexList(newTexList);
@@ -660,7 +660,7 @@ ${textureBlocks}
     setRearMake('Watanabe'); setRearModel('Watanabe'); setRearTyre('Thicc');
     setFrontOffset(BASE_OFFSETS.front); setRearOffset(BASE_OFFSETS.rear);
     setFrontWidth(215); setRearWidth(215); setFrontTireRadius(0.3150); setRearTireRadius(0.3150);
-    setTexList([{ make: 'Valino', model: 'Pergea 08R', label: { name: 'Standard', shortName: 'ST' } }]);
+    setTexList([{ make: 'Accelera', model: '651 Sport', label: { name: 'Standard', shortName: 'ST' } }]);
     localStorage.removeItem('tp_car'); localStorage.removeItem('tp_frm'); localStorage.removeItem('tp_rrm');
     localStorage.removeItem('tp_ftm'); localStorage.removeItem('tp_rtm'); localStorage.removeItem('tp_f_off');
     localStorage.removeItem('tp_r_off'); localStorage.removeItem('tp_f_width'); localStorage.removeItem('tp_r_width');
@@ -740,7 +740,7 @@ ${textureBlocks}
   };
 
   const addTexture = () => {
-    setTexList([...texList, { make: 'Valino', model: 'Pergea 08R', label: { name: 'Compound', shortName: 'SN' } }]);
+    setTexList([...texList, { make: 'Accelera', model: '651 Sport', label: { name: 'Compound', shortName: 'SN' } }]);
   };
 
   const removeTexture = (idx) => {
