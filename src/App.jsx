@@ -410,6 +410,7 @@ export default function App() {
   const [rearOffset, setRearOffset] = useState(() => parseFloat(localStorage.getItem('tp_r_off')) || BASE_OFFSETS.rear);
   const [frontWidth, setFrontWidth] = useState(() => parseInt(localStorage.getItem('tp_f_width')) || 215);
   const [rearWidth, setRearWidth] = useState(() => parseInt(localStorage.getItem('tp_r_width')) || 215);
+  const [tireRadius, setTireRadius] = useState(() => parseFloat(localStorage.getItem('tp_tire_radius')) || 0.3150);
   const [patronName, setPatronName] = useState(null);
   const [showGate, setShowGate] = useState(false);
   const [isCheckingAuth, setIsCheckingAuth] = useState(true);
@@ -435,8 +436,9 @@ export default function App() {
     localStorage.setItem('tp_r_off', rearOffset);
     localStorage.setItem('tp_f_width', frontWidth);
     localStorage.setItem('tp_r_width', rearWidth);
+    localStorage.setItem('tp_tire_radius', tireRadius);
     localStorage.setItem('free_gen_count', freeGenCount);
-  }, [carFile, frontRimMesh, rearRimMesh, frontTireMesh, rearTireMesh, texList, frontOffset, rearOffset, frontWidth, rearWidth, freeGenCount]);
+  }, [carFile, frontRimMesh, rearRimMesh, frontTireMesh, rearTireMesh, texList, frontOffset, rearOffset, frontWidth, rearWidth, tireRadius, freeGenCount]);
 
   const currentFrontRim = useMemo(() => RIM_DATABASE[frontMake]?.find(m => m.name === frontModel) || RIM_DATABASE[frontMake]?.[0], [frontMake, frontModel]);
   const currentRearRim = useMemo(() => RIM_DATABASE[rearMake]?.find(m => m.name === rearModel) || RIM_DATABASE[rearMake]?.[0], [rearMake, rearModel]);
@@ -460,6 +462,7 @@ export default function App() {
     const ftBaseTyreWidth = RIM_DATABASE[frontMake]?.find(m => m.name === frontModel)?.tyreWidthOverride?.front ?? (parseFloat(ftData.front.tyre.split(',')[1]) || 0.185);
     const rtBaseRimWidth = parseFloat(rtData.rear.rim.split(',')[1]) || 0.178;
     const rtBaseTyreWidth = RIM_DATABASE[rearMake]?.find(m => m.name === rearModel)?.tyreWidthOverride?.rear ?? (parseFloat(rtData.rear.tyre.split(',')[1]) || 0.185);
+    const radiusDelta = 0.3150 - tireRadius; // positive = smaller radius = bigger values
     const frontWidthDelta = ((frontWidth - 215) / 5) * -0.01;
     const rearWidthDelta = ((rearWidth - 215) / 5) * -0.01;
     const frontRimWidthInternal = (ftBaseRimWidth + frontWidthDelta).toFixed(3);
@@ -481,26 +484,26 @@ export default function App() {
 [ReplaceRims]
 File = ${clean(carFile)}
 OriginalRims = ${clean(frontRimMesh)}
-Model = /../../parts/rims/${frontMake}/${frontModel}.kn5, ${ftData.front.rim.split(',')[0]}, ${frontRimWidthInternal}
+Model = /../../parts/rims/${frontMake}/${frontModel}.kn5, ${(parseFloat(ftData.front.rim.split(',')[0]) + radiusDelta).toFixed(3)}, ${frontRimWidthInternal}
 Offset = ${fRimOffStr}
 FrontOnly=1
 [ReplaceRims]
 File = ${clean(carFile)}
 OriginalRims = ${clean(frontTireMesh)}
-Model = /../../parts/tyre/${ftData.file}, ${ftData.front.tyre.split(',')[0]}, ${frontTyreWidthInternal}
+Model = /../../parts/tyre/${ftData.file}, ${(parseFloat(ftData.front.tyre.split(',')[0]) + radiusDelta).toFixed(3)}, ${frontTyreWidthInternal}
 Offset = ${fOffStr}
 FrontOnly=1
 ; --- REAR SETUP ---
 [ReplaceRims]
 File = ${clean(carFile)}
 OriginalRims = ${clean(rearRimMesh)}
-Model = /../../parts/rims/${rearMake}/${rearModel}.kn5, ${rtData.rear.rim.split(',')[0]}, ${rearRimWidthInternal}
+Model = /../../parts/rims/${rearMake}/${rearModel}.kn5, ${(parseFloat(rtData.rear.rim.split(',')[0]) + radiusDelta).toFixed(3)}, ${rearRimWidthInternal}
 Offset = ${rRimOffStr}
 RearOnly=1
 [ReplaceRims]
 File = ${clean(carFile)}
 OriginalRims = ${clean(rearTireMesh)}
-Model = /../../parts/tyre/${rtData.file}, ${rtData.rear.tyre.split(',')[0]}, ${rearTyreWidthInternal}
+Model = /../../parts/tyre/${rtData.file}, ${(parseFloat(rtData.rear.tyre.split(',')[0]) + radiusDelta).toFixed(3)}, ${rearTyreWidthInternal}
 Offset = ${rOffStr}
 RearOnly=1
 ;===================================================================================================================
@@ -527,7 +530,7 @@ SHADER = ksTyresFX
 ${textureBlocks}
 ;===================================================================================================================
 `;
-  }, [carFile, frontRimMesh, rearRimMesh, frontTireMesh, rearTireMesh, frontMake, frontModel, frontTyre, rearMake, rearModel, rearTyre, texList, frontOffset, rearOffset, frontWidth, rearWidth]);
+  }, [carFile, frontRimMesh, rearRimMesh, frontTireMesh, rearTireMesh, frontMake, frontModel, frontTyre, rearMake, rearModel, rearTyre, texList, frontOffset, rearOffset, frontWidth, rearWidth, tireRadius]);
 
   const handleDrop = async (e) => {
     e.preventDefault();
@@ -889,7 +892,15 @@ ${textureBlocks}
             <h1 className="text-5xl md:text-[4.5rem] font-black tracking-[-0.015em] uppercase italic leading-none text-center text-white">
               RIM and TYRE
             </h1>
-            <p className="text-[13px] font-black uppercase tracking-[0.25em] text-slate-500 italic mt-1">*Defaults for 0.3150 Tire RADIUS*</p>
+            <div className="flex items-center gap-3 mt-1">
+              <span className="text-[13px] font-black uppercase tracking-[0.25em] text-slate-500 italic">*Tire Radius:</span>
+              <div className="flex items-center gap-1">
+                <button onClick={() => setTireRadius(r => Math.max(0.2500, +(r - 0.005).toFixed(4)))} className="w-6 h-6 flex items-center justify-center rounded-full border border-slate-700 bg-[#0B0F19] text-slate-500 hover:border-cyan-500 hover:text-cyan-400 transition-all text-xs font-bold"><Minus size={12}/></button>
+                <input type="number" step="0.005" min="0.2500" max="0.4000" value={tireRadius.toFixed(4)} onChange={e => setTireRadius(parseFloat(e.target.value) || 0.3150)} className="w-[90px] bg-transparent text-center text-[14px] font-black text-cyan-400 border border-slate-700 rounded-lg px-2 py-1 focus:border-cyan-500 focus:outline-none"/>
+                <button onClick={() => setTireRadius(r => Math.min(0.4000, +(r + 0.005).toFixed(4)))} className="w-6 h-6 flex items-center justify-center rounded-full border border-slate-700 bg-[#0B0F19] text-slate-500 hover:border-cyan-500 hover:text-cyan-400 transition-all text-xs font-bold"><Plus size={12}/></button>
+              </div>
+              <span className="text-[13px] font-black uppercase tracking-[0.25em] text-slate-500 italic">*</span>
+            </div>
           </div>
         </header>
 
