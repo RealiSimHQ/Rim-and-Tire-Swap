@@ -17,7 +17,7 @@ const LOGO_ID = "1OM0G4EM2uSp7voB-CDIbB1Lj86rJD-cb";
 const INCH_TO_INTERNAL = 0.0250;
 const STEP_INCHES = 0.125;
 const STEP_INTERNAL = STEP_INCHES * INCH_TO_INTERNAL;
-const BASE_OFFSETS = { front: 0.070, rear: -0.055 };
+const BASE_OFFSETS = { front: 0.050, rear: -0.055 };
 const MAX_FREE_GENERATIONS = 5;
 
 // --- UI THEME COLORS ---
@@ -474,8 +474,8 @@ export default function App() {
     const rtBaseTyreWidth = RIM_DATABASE[rearMake]?.find(m => m.name === rearModel)?.tyreWidthOverride?.rear ?? (parseFloat(rtData.rear.tyre.split(',')[1]) || 0.185);
     const frontRadiusDelta = frontTireRadius - 0.3150;
     const rearRadiusDelta = rearTireRadius - 0.3150;
-    const frontWidthDelta = ((frontWidth - 215) / 5) * -0.01;
-    const rearWidthDelta = ((rearWidth - 215) / 5) * -0.01;
+    const frontWidthDelta = ((frontWidth - 245) / 5) * -0.01;
+    const rearWidthDelta = ((rearWidth - 245) / 5) * -0.01;
     const frontRimWidthInternal = (ftBaseRimWidth + frontWidthDelta).toFixed(3);
     const frontTyreWidthInternal = (ftBaseTyreWidth + frontWidthDelta).toFixed(3);
     const rearRimWidthInternal = (rtBaseRimWidth + rearWidthDelta).toFixed(3);
