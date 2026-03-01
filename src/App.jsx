@@ -579,8 +579,8 @@ ${textureBlocks}
       const widths = [];
 
       // Parse RADIUS from [FRONT] and [REAR] sections
-      const frontRadiusMatch = text.match(/\[FRONT\][^\[]*?RADIUS\s*=\s*([0-9.]+)/i);
-      const rearRadiusMatch = text.match(/\[REAR\][^\[]*?RADIUS\s*=\s*([0-9.]+)/i);
+      const frontRadiusMatch = text.match(/\[FRONT\][\s\S]*?^RADIUS\s*=\s*([0-9.]+)/mi);
+      const rearRadiusMatch = text.match(/\[REAR\][\s\S]*?^RADIUS\s*=\s*([0-9.]+)/mi);
       if (frontRadiusMatch) setFrontTireRadius(parseFloat(frontRadiusMatch[1]));
       if (rearRadiusMatch) setRearTireRadius(parseFloat(rearRadiusMatch[1]));
       else if (frontRadiusMatch) setRearTireRadius(parseFloat(frontRadiusMatch[1]));
