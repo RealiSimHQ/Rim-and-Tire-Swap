@@ -566,15 +566,17 @@ ${textureBlocks}
 
       const uniqueTextures = new Map();
       const widths = [];
-      const radii = [];
+
+      // Parse RADIUS from [FRONT] section specifically
+      const frontMatch = text.match(/\[FRONT\][^\[]*?RADIUS\s*=\s*([0-9.]+)/i);
+      if (frontMatch) {
+        setTireRadius(parseFloat(frontMatch[1]));
+      }
 
       blocks.forEach(block => {
         const nameMatch = block.match(/^NAME\s*=\s*([^\r\n]+)/mi);
         const shortMatch = block.match(/^SHORT_NAME\s*=\s*([^\r\n]+)/mi);
         const widthMatch = block.match(/^WIDTH\s*=\s*([0-9.]+)/mi);
-
-        const radiusMatch = block.match(/^RADIUS\s*=\s*([0-9.]+)/mi);
-        if (radiusMatch) radii.push(parseFloat(radiusMatch[1]));
 
         if (widthMatch) {
           const internal = parseFloat(widthMatch[1]);
@@ -598,10 +600,6 @@ ${textureBlocks}
       if (widths.length > 0) {
         setFrontWidth(widths[0]);
         setRearWidth(widths[1] !== undefined ? widths[1] : widths[0]);
-      }
-
-      if (radii.length > 0) {
-        setTireRadius(radii[0]);
       }
 
       if (uniqueTextures.size > 0) {
