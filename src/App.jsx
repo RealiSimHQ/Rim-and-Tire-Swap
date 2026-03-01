@@ -538,6 +538,7 @@ export default function App() {
   ];
 
   const [isBatchGenerating, setIsBatchGenerating] = useState(false);
+  const [batchCount, setBatchCount] = useState(5);
 
   const batchGenerate = async (count) => {
     if (!carFile || !frontRimMesh || !rearRimMesh || !frontTireMesh || !rearTireMesh) {
@@ -1134,24 +1135,23 @@ export default function App() {
               </div>
               {/* Batch Generate */}
               <div className="border-t border-slate-700/50 pt-4">
-                <p className="text-[11px] font-black uppercase tracking-[0.3em] text-slate-600 mb-3">Batch Generate — Random Rims & Tyres</p>
-                <div className="flex gap-3">
-                  <button
-                    onClick={() => batchGenerate(5)}
-                    disabled={isBatchGenerating}
-                    className="px-6 py-3 bg-[#0B0F19] hover:bg-emerald-900/30 rounded-xl border border-slate-700 hover:border-emerald-500/40 text-[12px] font-black uppercase tracking-[0.2em] text-emerald-400 hover:text-emerald-300 transition-all active:scale-95 disabled:opacity-30 disabled:cursor-not-allowed"
-                  >
-                    {isBatchGenerating ? 'Generating...' : 'Generate 5'}
-                  </button>
-                  <button
-                    onClick={() => batchGenerate(10)}
-                    disabled={isBatchGenerating}
-                    className="px-6 py-3 bg-[#0B0F19] hover:bg-emerald-900/30 rounded-xl border border-slate-700 hover:border-emerald-500/40 text-[12px] font-black uppercase tracking-[0.2em] text-emerald-400 hover:text-emerald-300 transition-all active:scale-95 disabled:opacity-30 disabled:cursor-not-allowed"
-                  >
-                    {isBatchGenerating ? 'Generating...' : 'Generate 10'}
-                  </button>
+                <div className="flex items-center gap-4 mb-3">
+                  <p className="text-[11px] font-black uppercase tracking-[0.3em] text-slate-600 shrink-0">Create Skins</p>
+                  <input
+                    type="range" min="1" max="10" value={batchCount}
+                    onChange={(e) => setBatchCount(parseInt(e.target.value))}
+                    className="flex-1 h-1.5 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-emerald-500"
+                  />
+                  <span className="text-[18px] font-black text-emerald-400 w-8 text-center">{batchCount}</span>
                 </div>
-                <p className="text-[10px] text-slate-600 mt-2 tracking-wider">Uses current settings (offsets, widths, radii, textures) with randomized rims & tyre styles per skin</p>
+                <button
+                  onClick={() => batchGenerate(batchCount)}
+                  disabled={isBatchGenerating}
+                  className="px-8 py-3 bg-[#0B0F19] hover:bg-emerald-900/30 rounded-xl border border-slate-700 hover:border-emerald-500/40 text-[12px] font-black uppercase tracking-[0.2em] text-emerald-400 hover:text-emerald-300 transition-all active:scale-95 disabled:opacity-30 disabled:cursor-not-allowed"
+                >
+                  {isBatchGenerating ? 'Generating...' : `Generate ${batchCount} Skin${batchCount > 1 ? 's' : ''}`}
+                </button>
+                <p className="text-[10px] text-slate-600 mt-2 tracking-wider">Randomized rims & tyre styles per skin, using current settings</p>
               </div>
             </div>
           )}
