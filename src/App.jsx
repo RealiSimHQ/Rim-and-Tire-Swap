@@ -892,7 +892,7 @@ ${textureBlocks}
       )}
 
       <div className="max-w-[1900px] mx-auto pt-10 pb-12 h-full flex flex-col">
-        <header className="flex flex-col items-center justify-center space-y-3 pb-10">
+        <header className="flex flex-col items-center justify-center space-y-3 pb-4">
           <a href="https://www.patreon.com/c/u80119694" target="_blank" className="group transition-all duration-300 hover:scale-110 hover:drop-shadow-[0_0_40px_rgba(34,211,238,0.8)]">
             <img src={formatImageUrl(`id=${LOGO_ID}`)} alt="RealiSim HQ" className="h-32 md:h-40 drop-shadow-[0_0_35px_rgba(34,211,238,0.6)]" />
           </a>
@@ -900,16 +900,17 @@ ${textureBlocks}
             <h1 className="text-5xl md:text-[4.5rem] font-black tracking-[-0.015em] uppercase italic leading-none text-center text-white">
               RIM and TYRE
             </h1>
-            <div className="flex flex-col items-center gap-1 mt-1">
-              <span className="text-[14px] font-black uppercase tracking-[0.3em] text-slate-500 italic">*Tire Radius*</span>
-              <div className="flex items-center gap-2">
-                <button onClick={() => setTireRadius(r => Math.max(0.2500, +(r - 0.005).toFixed(4)))} className="w-8 h-8 flex items-center justify-center rounded-full border-2 border-slate-700 bg-[#0B0F19] text-slate-500 hover:border-cyan-500 hover:text-cyan-400 transition-all font-bold"><Minus size={16}/></button>
-                <input type="number" step="0.005" min="0.2500" max="0.4000" value={tireRadius.toFixed(4)} onChange={e => setTireRadius(parseFloat(e.target.value) || 0.3150)} className="w-[120px] bg-transparent text-center text-[20px] font-black text-cyan-400 border-2 border-slate-700 rounded-lg px-3 py-2 focus:border-cyan-500 focus:outline-none"/>
-                <button onClick={() => setTireRadius(r => Math.min(0.4000, +(r + 0.005).toFixed(4)))} className="w-8 h-8 flex items-center justify-center rounded-full border-2 border-slate-700 bg-[#0B0F19] text-slate-500 hover:border-cyan-500 hover:text-cyan-400 transition-all font-bold"><Plus size={16}/></button>
-              </div>
-            </div>
           </div>
         </header>
+
+        <div className="flex flex-col items-center gap-1 mb-4">
+          <span className="text-[14px] font-black uppercase tracking-[0.3em] text-slate-500 italic">*Tire Radius*</span>
+          <div className="flex items-center gap-2">
+            <button onClick={() => setTireRadius(r => Math.max(0.2500, +(r - 0.005).toFixed(4)))} className="w-8 h-8 flex items-center justify-center rounded-full border-2 border-slate-700 bg-[#0B0F19] text-slate-500 hover:border-cyan-500 hover:text-cyan-400 transition-all font-bold"><Minus size={16}/></button>
+            <input type="number" step="0.005" min="0.2500" max="0.4000" value={tireRadius.toFixed(4)} onChange={e => setTireRadius(parseFloat(e.target.value) || 0.3150)} className="w-[120px] bg-transparent text-center text-[20px] font-black text-cyan-400 border-2 border-slate-700 rounded-lg px-3 py-2 focus:border-cyan-500 focus:outline-none"/>
+            <button onClick={() => setTireRadius(r => Math.min(0.4000, +(r + 0.005).toFixed(4)))} className="w-8 h-8 flex items-center justify-center rounded-full border-2 border-slate-700 bg-[#0B0F19] text-slate-500 hover:border-cyan-500 hover:text-cyan-400 transition-all font-bold"><Plus size={16}/></button>
+          </div>
+        </div>
 
         <div className="flex flex-col gap-12">
           <div className="flex justify-center gap-24 flex-wrap">
