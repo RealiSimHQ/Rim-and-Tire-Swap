@@ -1135,14 +1135,18 @@ export default function App() {
               </div>
               {/* Batch Generate */}
               <div className="border-t border-slate-700/50 pt-4">
-                <div className="flex items-center gap-4 mb-3">
-                  <p className="text-[11px] font-black uppercase tracking-[0.3em] text-slate-600 shrink-0">Create Skins</p>
+                <p className="text-[11px] font-black uppercase tracking-[0.3em] text-slate-600 mb-2">Create Skins</p>
+                <div className="max-w-[400px] mb-3">
                   <input
                     type="range" min="1" max="10" value={batchCount}
                     onChange={(e) => setBatchCount(parseInt(e.target.value))}
-                    className="flex-1 h-1.5 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-emerald-500"
+                    className="w-full h-3 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-emerald-500"
                   />
-                  <span className="text-[18px] font-black text-emerald-400 w-8 text-center">{batchCount}</span>
+                  <div className="flex justify-between px-[2px] mt-1">
+                    {[1,2,3,4,5,6,7,8,9,10].map(n => (
+                      <span key={n} className={`text-[10px] font-black cursor-pointer transition-colors ${n === batchCount ? 'text-emerald-400' : 'text-slate-600 hover:text-slate-400'}`} onClick={() => setBatchCount(n)}>{n}</span>
+                    ))}
+                  </div>
                 </div>
                 <button
                   onClick={() => batchGenerate(batchCount)}
