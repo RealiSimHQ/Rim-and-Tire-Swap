@@ -79,7 +79,7 @@ const RIM_DATABASE = {
   "STROM": [{ name: "DS-F45", img: "id=1frd_mbVHDEEKeZZxCmMOUjhjETyUXxd1" }],
   "TurboFan": [{ name: "TurboFan", img: "id=104HLzCN8AT3O0EuvvwhqESr9F5BNqjkh" }],
   "Volk": [
-    { name: "Rays_57", img: "id=1PEGUklaR4jnPZZ9fqHUByR2hrKB__iWV" }, { name: "Rays_57DR", img: "id=1ACs03BRzL26EmZkSqTLVpcBoyC6cFEVp" },
+    { name: "Rays_57", img: "id=1PEGUklaR4jnPZZ9fqHUByR2hrKB__iWV" }, { name: "Rays_57DR", img: "id=1ACs03BRzL26EmZkSqTLVpcBoyC6cFEVp", radiusDelta: 0.030 },
     { name: "Rays_CE28", img: "id=1ydmAggrQL0SO9rOeu5ifCXnqaw5DVKcX" }, { name: "Rays_G025", img: "id=1xwta1dJigMJ4pUwxpu3tpJ0L6B3HX9bc" },
     { name: "Rays_GL", img: "id=1fEHPg1Hy3YRioct5PXGjdRo0nFIB_-vG" }, { name: "Rays_GTS", img: "id=16N-U6zfYTqxlmBO5yjPh-folHJPR8Nx2" },
     { name: "Rays_TE37V", img: "id=1GZL0dxGEkQOUo5zbRApBxqM0692dIFHd" }, { name: "Rays_TE37Z", img: "id=1aUR6kjHj8_FHj7kdnidelu9dDDJ9czAZ" },
@@ -118,8 +118,12 @@ function generateINI({ carFile, frontRimMesh, rearRimMesh, frontTireMesh, rearTi
   const ftData = TYRE_STYLES[fTyre];
   const rtData = TYRE_STYLES[rTyre];
   const clean = (str) => str.trim().replace(/,$/, '').replace(/,\s*$/, '');
-  const frontRimDelta = RIM_DATABASE[fMake]?.find(m => m.name === fModel)?.offsetDelta || 0;
-  const rearRimDelta = RIM_DATABASE[rMake]?.find(m => m.name === rModel)?.offsetDelta || 0;
+  const frontRimEntry = RIM_DATABASE[fMake]?.find(m => m.name === fModel);
+  const rearRimEntry = RIM_DATABASE[rMake]?.find(m => m.name === rModel);
+  const frontRimDelta = frontRimEntry?.offsetDelta || 0;
+  const rearRimDelta = rearRimEntry?.offsetDelta || 0;
+  const frontRimRadiusDelta = frontRimEntry?.radiusDelta || 0;
+  const rearRimRadiusDelta = rearRimEntry?.radiusDelta || 0;
   const fOffStr = `${fOffset.toFixed(3)}, 0.0`;
   const fRimOffStr = `${(fOffset + frontRimDelta).toFixed(3)}, 0.0`;
   const rOffStr = `0.0, ${rOffset.toFixed(3)}`;
@@ -151,7 +155,7 @@ function generateINI({ carFile, frontRimMesh, rearRimMesh, frontTireMesh, rearTi
 [ReplaceRims]
 File = ${clean(carFile)}
 OriginalRims = ${clean(frontRimMesh)}
-Model = /../../parts/rims/${fMake}/${fModel}.kn5, ${(parseFloat(ftData.front.rim.split(',')[0]) + frontRadiusDelta).toFixed(3)}, ${frontRimWidthInternal}
+Model = /../../parts/rims/${fMake}/${fModel}.kn5, ${(parseFloat(ftData.front.rim.split(',')[0]) + frontRadiusDelta + frontRimRadiusDelta).toFixed(3)}, ${frontRimWidthInternal}
 Offset = ${fRimOffStr}
 FrontOnly=1
 [ReplaceRims]
@@ -164,7 +168,7 @@ FrontOnly=1
 [ReplaceRims]
 File = ${clean(carFile)}
 OriginalRims = ${clean(rearRimMesh)}
-Model = /../../parts/rims/${rMake}/${rModel}.kn5, ${(parseFloat(rtData.rear.rim.split(',')[0]) + rearRadiusDelta).toFixed(3)}, ${rearRimWidthInternal}
+Model = /../../parts/rims/${rMake}/${rModel}.kn5, ${(parseFloat(rtData.rear.rim.split(',')[0]) + rearRadiusDelta + rearRimRadiusDelta).toFixed(3)}, ${rearRimWidthInternal}
 Offset = ${rRimOffStr}
 RearOnly=1
 [ReplaceRims]
