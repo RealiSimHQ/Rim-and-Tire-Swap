@@ -408,11 +408,11 @@ export default function App() {
   const [genStep, setGenStep] = useState('idle');
   const [copySuccess, setCopySuccess] = useState(false);
   const [pickerOpen, setPickerOpen] = useState(null);
-  const [frontMake, setFrontMake] = useState('Advan');
-  const [frontModel, setFrontModel] = useState('A3A');
+  const [frontMake, setFrontMake] = useState('Volk');
+  const [frontModel, setFrontModel] = useState('Rays_CE28');
   const [frontTyre, setFrontTyre] = useState('Stretched');
-  const [rearMake, setRearMake] = useState('Work');
-  const [rearModel, setRearModel] = useState('Blitz_03');
+  const [rearMake, setRearMake] = useState('Watanabe');
+  const [rearModel, setRearModel] = useState('Watanabe');
   const [rearTyre, setRearTyre] = useState('Thicc');
   const [frontOffset, setFrontOffset] = useState(() => parseFloat(localStorage.getItem('tp_f_off')) || BASE_OFFSETS.front);
   const [rearOffset, setRearOffset] = useState(() => parseFloat(localStorage.getItem('tp_r_off')) || BASE_OFFSETS.rear);
@@ -427,6 +427,20 @@ export default function App() {
   const [showDelayModal, setShowDelayModal] = useState(false);
   const [delayCountdown, setDelayCountdown] = useState(5);
   const [goldClicked, setGoldClicked] = useState(false);
+  const [presetsOpen, setPresetsOpen] = useState(false);
+
+  const PRESETS = [
+    {
+      name: 'TANDEM Pack',
+      desc: 'RealiSimHQ Tandem defaults',
+      apply: () => {
+        setFrontOffset(0.050 - (1 * INCH_TO_INTERNAL));  // -1"
+        setRearOffset(-0.055 + (2 * INCH_TO_INTERNAL));   // +2"
+        setFrontTireRadius(0.2850);
+        setRearTireRadius(0.2850);
+      }
+    }
+  ];
 
   useEffect(() => {
     const name = checkPatreonSession();
@@ -642,8 +656,8 @@ ${textureBlocks}
 
   const resetAll = () => {
     setCarFile(''); setFrontRimMesh(''); setRearRimMesh(''); setFrontTireMesh(''); setRearTireMesh('');
-    setFrontMake('Advan'); setFrontModel('A3A'); setFrontTyre('Stretched');
-    setRearMake('Work'); setRearModel('Blitz_03'); setRearTyre('Thicc');
+    setFrontMake('Volk'); setFrontModel('Rays_CE28'); setFrontTyre('Stretched');
+    setRearMake('Watanabe'); setRearModel('Watanabe'); setRearTyre('Thicc');
     setFrontOffset(BASE_OFFSETS.front); setRearOffset(BASE_OFFSETS.rear);
     setFrontWidth(215); setRearWidth(215); setFrontTireRadius(0.3150); setRearTireRadius(0.3150);
     setTexList([{ make: 'Valino', model: 'Pergea 08R', label: { name: 'Standard', shortName: 'ST' } }]);
@@ -1024,6 +1038,30 @@ ${textureBlocks}
               <div className="flex-1 overflow-auto bg-[#0B0F19] rounded-[2.5rem] p-10 font-mono text-[13px] leading-relaxed text-slate-400 custom-scrollbar border border-slate-800 shadow-inner whitespace-pre">
                 {iniContent}
               </div>
+            </div>
+          )}
+        </div>
+        {/* Presets Dropdown */}
+        <div className="mt-8 mb-4">
+          <button
+            onClick={() => setPresetsOpen(!presetsOpen)}
+            className="flex items-center gap-3 text-[13px] font-black uppercase tracking-[0.3em] text-slate-500 hover:text-slate-300 transition-all"
+          >
+            <span className={`transition-transform duration-200 ${presetsOpen ? 'rotate-90' : ''}`}>▶</span>
+            Presets
+          </button>
+          {presetsOpen && (
+            <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              {PRESETS.map((preset, i) => (
+                <button
+                  key={i}
+                  onClick={() => { preset.apply(); }}
+                  className="p-5 bg-[#0B0F19] hover:bg-slate-800/80 rounded-2xl border border-slate-700 hover:border-cyan-500/40 transition-all text-left group active:scale-95"
+                >
+                  <p className="text-[13px] font-black uppercase tracking-[0.2em] text-cyan-400 group-hover:text-cyan-300">{preset.name}</p>
+                  <p className="text-[11px] text-slate-500 mt-1 tracking-wider">{preset.desc}</p>
+                </button>
+              ))}
             </div>
           )}
         </div>
