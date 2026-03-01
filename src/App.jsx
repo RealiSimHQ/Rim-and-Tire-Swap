@@ -312,7 +312,7 @@ Object.keys(RIM_DATABASE).sort().forEach(make => {
   });
 });
 
-const WheelAssembly = ({ side, rimMake, rimModel, rimImg, tyreName, tyreImg, tyreKey, onOpenRimPicker, onOpenTyrePicker, onRimChange, onTyreChange, colorTheme }) => {
+const WheelAssembly = ({ side, rimMake, rimModel, rimImg, tyreName, tyreImg, tyreKey, onOpenRimPicker, onOpenTyrePicker, onRimChange, onTyreChange, colorTheme, tireRadius, setTireRadius }) => {
   const c = COLORS[colorTheme];
   const [rollAnim, setRollAnim] = useState('');
 
@@ -339,6 +339,14 @@ const WheelAssembly = ({ side, rimMake, rimModel, rimImg, tyreName, tyreImg, tyr
 
   return (
     <div className="flex flex-col items-center gap-5">
+      <div className="flex flex-col items-center gap-1">
+        <span className="text-[11px] font-black uppercase tracking-[0.2em] text-slate-600 italic">Tire Radius</span>
+        <div className="flex items-center gap-1.5">
+          <button onClick={() => setTireRadius(r => Math.max(0.2500, +(r - 0.005).toFixed(4)))} className="w-6 h-6 flex items-center justify-center rounded-full border border-slate-700 bg-[#0B0F19] text-slate-500 hover:border-cyan-500 hover:text-cyan-400 transition-all"><Minus size={12}/></button>
+          <input type="number" step="0.005" min="0.2500" max="0.4000" value={tireRadius.toFixed(4)} onChange={e => setTireRadius(parseFloat(e.target.value) || 0.3150)} className="w-[85px] bg-transparent text-center text-[15px] font-black text-cyan-400 border border-slate-700 rounded-lg px-1.5 py-1 focus:border-cyan-500 focus:outline-none"/>
+          <button onClick={() => setTireRadius(r => Math.min(0.4000, +(r + 0.005).toFixed(4)))} className="w-6 h-6 flex items-center justify-center rounded-full border border-slate-700 bg-[#0B0F19] text-slate-500 hover:border-cyan-500 hover:text-cyan-400 transition-all"><Plus size={12}/></button>
+        </div>
+      </div>
       <p className={`text-[14px] font-black uppercase tracking-[0.5em] italic ${c.textFade}`}>{side}</p>
       {/* Rim label with arrows */}
       <div className="flex items-center w-[300px]">
@@ -410,7 +418,8 @@ export default function App() {
   const [rearOffset, setRearOffset] = useState(() => parseFloat(localStorage.getItem('tp_r_off')) || BASE_OFFSETS.rear);
   const [frontWidth, setFrontWidth] = useState(() => parseInt(localStorage.getItem('tp_f_width')) || 215);
   const [rearWidth, setRearWidth] = useState(() => parseInt(localStorage.getItem('tp_r_width')) || 215);
-  const [tireRadius, setTireRadius] = useState(() => parseFloat(localStorage.getItem('tp_tire_radius')) || 0.3150);
+  const [frontTireRadius, setFrontTireRadius] = useState(() => parseFloat(localStorage.getItem('tp_f_tire_radius')) || 0.3150);
+  const [rearTireRadius, setRearTireRadius] = useState(() => parseFloat(localStorage.getItem('tp_r_tire_radius')) || 0.3150);
   const [patronName, setPatronName] = useState(null);
   const [showGate, setShowGate] = useState(false);
   const [isCheckingAuth, setIsCheckingAuth] = useState(true);
@@ -436,9 +445,10 @@ export default function App() {
     localStorage.setItem('tp_r_off', rearOffset);
     localStorage.setItem('tp_f_width', frontWidth);
     localStorage.setItem('tp_r_width', rearWidth);
-    localStorage.setItem('tp_tire_radius', tireRadius);
+    localStorage.setItem('tp_f_tire_radius', frontTireRadius);
+    localStorage.setItem('tp_r_tire_radius', rearTireRadius);
     localStorage.setItem('free_gen_count', freeGenCount);
-  }, [carFile, frontRimMesh, rearRimMesh, frontTireMesh, rearTireMesh, texList, frontOffset, rearOffset, frontWidth, rearWidth, tireRadius, freeGenCount]);
+  }, [carFile, frontRimMesh, rearRimMesh, frontTireMesh, rearTireMesh, texList, frontOffset, rearOffset, frontWidth, rearWidth, frontTireRadius, rearTireRadius, freeGenCount]);
 
   const currentFrontRim = useMemo(() => RIM_DATABASE[frontMake]?.find(m => m.name === frontModel) || RIM_DATABASE[frontMake]?.[0], [frontMake, frontModel]);
   const currentRearRim = useMemo(() => RIM_DATABASE[rearMake]?.find(m => m.name === rearModel) || RIM_DATABASE[rearMake]?.[0], [rearMake, rearModel]);
@@ -462,7 +472,8 @@ export default function App() {
     const ftBaseTyreWidth = RIM_DATABASE[frontMake]?.find(m => m.name === frontModel)?.tyreWidthOverride?.front ?? (parseFloat(ftData.front.tyre.split(',')[1]) || 0.185);
     const rtBaseRimWidth = parseFloat(rtData.rear.rim.split(',')[1]) || 0.178;
     const rtBaseTyreWidth = RIM_DATABASE[rearMake]?.find(m => m.name === rearModel)?.tyreWidthOverride?.rear ?? (parseFloat(rtData.rear.tyre.split(',')[1]) || 0.185);
-    const radiusDelta = 0.3150 - tireRadius; // positive = smaller radius = bigger values
+    const frontRadiusDelta = 0.3150 - frontTireRadius;
+    const rearRadiusDelta = 0.3150 - rearTireRadius;
     const frontWidthDelta = ((frontWidth - 215) / 5) * -0.01;
     const rearWidthDelta = ((rearWidth - 215) / 5) * -0.01;
     const frontRimWidthInternal = (ftBaseRimWidth + frontWidthDelta).toFixed(3);
@@ -484,26 +495,26 @@ export default function App() {
 [ReplaceRims]
 File = ${clean(carFile)}
 OriginalRims = ${clean(frontRimMesh)}
-Model = /../../parts/rims/${frontMake}/${frontModel}.kn5, ${(parseFloat(ftData.front.rim.split(',')[0]) + radiusDelta).toFixed(3)}, ${frontRimWidthInternal}
+Model = /../../parts/rims/${frontMake}/${frontModel}.kn5, ${(parseFloat(ftData.front.rim.split(',')[0]) + frontRadiusDelta).toFixed(3)}, ${frontRimWidthInternal}
 Offset = ${fRimOffStr}
 FrontOnly=1
 [ReplaceRims]
 File = ${clean(carFile)}
 OriginalRims = ${clean(frontTireMesh)}
-Model = /../../parts/tyre/${ftData.file}, ${(parseFloat(ftData.front.tyre.split(',')[0]) + radiusDelta).toFixed(3)}, ${frontTyreWidthInternal}
+Model = /../../parts/tyre/${ftData.file}, ${(parseFloat(ftData.front.tyre.split(',')[0]) + frontRadiusDelta).toFixed(3)}, ${frontTyreWidthInternal}
 Offset = ${fOffStr}
 FrontOnly=1
 ; --- REAR SETUP ---
 [ReplaceRims]
 File = ${clean(carFile)}
 OriginalRims = ${clean(rearRimMesh)}
-Model = /../../parts/rims/${rearMake}/${rearModel}.kn5, ${(parseFloat(rtData.rear.rim.split(',')[0]) + radiusDelta).toFixed(3)}, ${rearRimWidthInternal}
+Model = /../../parts/rims/${rearMake}/${rearModel}.kn5, ${(parseFloat(rtData.rear.rim.split(',')[0]) + rearRadiusDelta).toFixed(3)}, ${rearRimWidthInternal}
 Offset = ${rRimOffStr}
 RearOnly=1
 [ReplaceRims]
 File = ${clean(carFile)}
 OriginalRims = ${clean(rearTireMesh)}
-Model = /../../parts/tyre/${rtData.file}, ${(parseFloat(rtData.rear.tyre.split(',')[0]) + radiusDelta).toFixed(3)}, ${rearTyreWidthInternal}
+Model = /../../parts/tyre/${rtData.file}, ${(parseFloat(rtData.rear.tyre.split(',')[0]) + rearRadiusDelta).toFixed(3)}, ${rearTyreWidthInternal}
 Offset = ${rOffStr}
 RearOnly=1
 ;===================================================================================================================
@@ -530,7 +541,7 @@ SHADER = ksTyresFX
 ${textureBlocks}
 ;===================================================================================================================
 `;
-  }, [carFile, frontRimMesh, rearRimMesh, frontTireMesh, rearTireMesh, frontMake, frontModel, frontTyre, rearMake, rearModel, rearTyre, texList, frontOffset, rearOffset, frontWidth, rearWidth, tireRadius]);
+  }, [carFile, frontRimMesh, rearRimMesh, frontTireMesh, rearTireMesh, frontMake, frontModel, frontTyre, rearMake, rearModel, rearTyre, texList, frontOffset, rearOffset, frontWidth, rearWidth, frontTireRadius, rearTireRadius]);
 
   const handleDrop = async (e) => {
     e.preventDefault();
@@ -567,11 +578,12 @@ ${textureBlocks}
       const uniqueTextures = new Map();
       const widths = [];
 
-      // Parse RADIUS from [FRONT] section specifically
-      const frontMatch = text.match(/\[FRONT\][^\[]*?RADIUS\s*=\s*([0-9.]+)/i);
-      if (frontMatch) {
-        setTireRadius(parseFloat(frontMatch[1]));
-      }
+      // Parse RADIUS from [FRONT] and [REAR] sections
+      const frontRadiusMatch = text.match(/\[FRONT\][^\[]*?RADIUS\s*=\s*([0-9.]+)/i);
+      const rearRadiusMatch = text.match(/\[REAR\][^\[]*?RADIUS\s*=\s*([0-9.]+)/i);
+      if (frontRadiusMatch) setFrontTireRadius(parseFloat(frontRadiusMatch[1]));
+      if (rearRadiusMatch) setRearTireRadius(parseFloat(rearRadiusMatch[1]));
+      else if (frontRadiusMatch) setRearTireRadius(parseFloat(frontRadiusMatch[1]));
 
       blocks.forEach(block => {
         const nameMatch = block.match(/^NAME\s*=\s*([^\r\n]+)/mi);
@@ -633,7 +645,7 @@ ${textureBlocks}
     setFrontMake('Advan'); setFrontModel('A3A'); setFrontTyre('Stretched');
     setRearMake('Work'); setRearModel('Blitz_03'); setRearTyre('Thicc');
     setFrontOffset(BASE_OFFSETS.front); setRearOffset(BASE_OFFSETS.rear);
-    setFrontWidth(215); setRearWidth(215); setTireRadius(0.3150);
+    setFrontWidth(215); setRearWidth(215); setFrontTireRadius(0.3150); setRearTireRadius(0.3150);
     setTexList([{ make: 'Valino', model: 'Pergea 08R', label: { name: 'Standard', shortName: 'ST' } }]);
     localStorage.removeItem('tp_car'); localStorage.removeItem('tp_frm'); localStorage.removeItem('tp_rrm');
     localStorage.removeItem('tp_ftm'); localStorage.removeItem('tp_rtm'); localStorage.removeItem('tp_f_off');
@@ -901,15 +913,6 @@ ${textureBlocks}
           </div>
         </header>
 
-        <div className="flex flex-col items-center gap-1 mb-4">
-          <span className="text-[14px] font-black uppercase tracking-[0.3em] text-slate-500 italic">*Tire Radius*</span>
-          <div className="flex items-center gap-2">
-            <button onClick={() => setTireRadius(r => Math.max(0.2500, +(r - 0.005).toFixed(4)))} className="w-8 h-8 flex items-center justify-center rounded-full border-2 border-slate-700 bg-[#0B0F19] text-slate-500 hover:border-cyan-500 hover:text-cyan-400 transition-all font-bold"><Minus size={16}/></button>
-            <input type="number" step="0.005" min="0.2500" max="0.4000" value={tireRadius.toFixed(4)} onChange={e => setTireRadius(parseFloat(e.target.value) || 0.3150)} className="w-[120px] bg-transparent text-center text-[20px] font-black text-cyan-400 border-2 border-slate-700 rounded-lg px-3 py-2 focus:border-cyan-500 focus:outline-none"/>
-            <button onClick={() => setTireRadius(r => Math.min(0.4000, +(r + 0.005).toFixed(4)))} className="w-8 h-8 flex items-center justify-center rounded-full border-2 border-slate-700 bg-[#0B0F19] text-slate-500 hover:border-cyan-500 hover:text-cyan-400 transition-all font-bold"><Plus size={16}/></button>
-          </div>
-        </div>
-
         <div className="flex flex-col gap-12">
           <div className="flex justify-center gap-24 flex-wrap">
             <WheelAssembly
@@ -920,6 +923,7 @@ ${textureBlocks}
               onOpenTyrePicker={() => setPickerOpen('front-tyre-profile')}
               onRimChange={(make, model) => { setFrontMake(make); setFrontModel(model); }}
               onTyreChange={(key) => setFrontTyre(key)}
+              tireRadius={frontTireRadius} setTireRadius={setFrontTireRadius}
             />
             <WheelAssembly
               side="Rear" colorTheme="purple"
@@ -929,6 +933,7 @@ ${textureBlocks}
               onOpenTyrePicker={() => setPickerOpen('rear-tyre-profile')}
               onRimChange={(make, model) => { setRearMake(make); setRearModel(model); }}
               onTyreChange={(key) => setRearTyre(key)}
+              tireRadius={rearTireRadius} setTireRadius={setRearTireRadius}
             />
           </div>
 
