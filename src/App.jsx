@@ -647,8 +647,14 @@ export default function App() {
           if (ent.name.toLowerCase().endsWith('.kn5') && ent.name.toLowerCase() !== 'collider.kn5') kn5List.push(ent.name);
         } else if (ent.isDirectory) {
           const r = ent.createReader();
-          const es = await new Promise(resolve => r.readEntries(resolve));
-          for (const c of es) await collectKN5s(c);
+          // Read ALL batches (readEntries returns ~100 at a time)
+          let allEntries = [];
+          let batch;
+          do {
+            batch = await new Promise(resolve => r.readEntries(resolve));
+            allEntries.push(...batch);
+          } while (batch.length > 0);
+          for (const c of allEntries) await collectKN5s(c);
         }
       };
       await collectKN5s(entry);
